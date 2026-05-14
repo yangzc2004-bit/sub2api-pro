@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"time"
 )
 
@@ -115,5 +116,42 @@ func (r *OpenAITokenRefresher) Refresh(ctx context.Context, account *Account) (m
 	newCredentials := r.openaiOAuthService.BuildAccountCredentials(tokenInfo)
 	newCredentials = MergeCredentials(account.Credentials, newCredentials)
 
+	return newCredentials, nil
+}
+
+type KimiTokenRefresher struct {
+	kimiOAuthService *KimiOAuthService
+}
+
+func NewKimiTokenRefresher(kimiOAuthService *KimiOAuthService) *KimiTokenRefresher {
+	return &KimiTokenRefresher{kimiOAuthService: kimiOAuthService}
+}
+
+func (r *KimiTokenRefresher) CacheKey(account *Account) string {
+	if account == nil {
+		return "kimi:oauth:0"
+	}
+	return "kimi:oauth:" + strconv.FormatInt(account.ID, 10)
+}
+
+func (r *KimiTokenRefresher) CanRefresh(account *Account) bool {
+	return account != nil && account.Platform == PlatformKimi && account.Type == AccountTypeOAuth
+}
+
+func (r *KimiTokenRefresher) NeedsRefresh(account *Account, refreshWindow time.Duration) bool {
+	expiresAt := account.GetCredentialAsTime("expires_at")
+	if expiresAt == nil {
+		return false
+	}
+	return time.Until(*expiresAt) < refreshWindow
+}
+
+func (r *KimiTokenRefresher) Refresh(ctx context.Context, account *Account) (map[string]any, error) {
+	tokenInfo, err := r.kimiOAuthService.RefreshAccountToken(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+	newCredentials := r.kimiOAuthService.BuildAccountCredentials(tokenInfo)
+	newCredentials = MergeCredentials(account.Credentials, newCredentials)
 	return newCredentials, nil
 }

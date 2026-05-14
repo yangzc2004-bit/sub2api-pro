@@ -141,6 +141,32 @@ func TestGetModelPricing_Gpt54NanoUsesDedicatedStaticFallbackWhenRemoteMissing(t
 	require.Zero(t, got.LongContextInputTokenThreshold)
 }
 
+func TestGetModelPricing_KimiUsesStaticFallbackWhenRemoteMissing(t *testing.T) {
+	svc := &PricingService{
+		pricingData: map[string]*LiteLLMModelPricing{},
+	}
+
+	got := svc.GetModelPricing("kimi-k2.6-full")
+	require.NotNil(t, got)
+	require.InDelta(t, 6e-6, got.InputCostPerToken, 1e-12)
+	require.InDelta(t, 2.4e-5, got.OutputCostPerToken, 1e-12)
+	require.InDelta(t, 8e-7, got.CacheReadInputTokenCost, 1e-12)
+	require.Equal(t, "kimi", got.LiteLLMProvider)
+	require.True(t, got.SupportsPromptCaching)
+}
+
+func TestGetModelPricing_KimiForCodingUsesStaticFallbackWhenRemoteMissing(t *testing.T) {
+	svc := &PricingService{
+		pricingData: map[string]*LiteLLMModelPricing{},
+	}
+
+	got := svc.GetModelPricing("kimi-for-coding")
+	require.NotNil(t, got)
+	require.InDelta(t, 6e-6, got.InputCostPerToken, 1e-12)
+	require.InDelta(t, 2.4e-5, got.OutputCostPerToken, 1e-12)
+	require.InDelta(t, 8e-7, got.CacheReadInputTokenCost, 1e-12)
+}
+
 func TestGetModelPricing_ImageModelDoesNotFallbackToTextModel(t *testing.T) {
 	imagePricing := &LiteLLMModelPricing{InputCostPerToken: 3}
 	textPricing := &LiteLLMModelPricing{InputCostPerToken: 9}

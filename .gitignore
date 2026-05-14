@@ -136,3 +136,26 @@ docs/*
 frontend/coverage/
 aicodex
 output/
+
+# Local package/cache/runtime artifacts
+frontend/.pnpm-store/
+.codex-qwen2API/
+backend/*.pid
+backend/*.bak*
+backend/*.exe.bak*
+backend/sub2api-linux-amd64*
+backend/run-sub2api-*.ps1
+backend/run-sub2api-*.cmd
+backend/*test*.json
+backend/*-test*.json
+backend/create-*.json
+backend/bind-*.json
+backend/qwen_real_verify.json
+frontend/simple-server-test.cjs
+frontend/simple-server-test.js
+frontend/vite.nochecker.config.ts
+frontend/vite.plain.config.ts
+frontend/pnpm-workspace.yaml
+frontend/run-frontend-task.cmd
+backend/model_pricing.json
+backend/model_pricing.sha256

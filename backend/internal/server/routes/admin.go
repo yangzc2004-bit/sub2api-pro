@@ -41,6 +41,9 @@ func RegisterAdminRoutes(
 		// Antigravity OAuth
 		registerAntigravityOAuthRoutes(admin, h)
 
+		// Kimi OAuth
+		registerKimiOAuthRoutes(admin, h)
+
 		// 代理管理
 		registerProxyRoutes(admin, h)
 
@@ -362,6 +365,16 @@ func registerAntigravityOAuthRoutes(admin *gin.RouterGroup, h *handler.Handlers)
 		antigravity.POST("/oauth/auth-url", h.Admin.AntigravityOAuth.GenerateAuthURL)
 		antigravity.POST("/oauth/exchange-code", h.Admin.AntigravityOAuth.ExchangeCode)
 		antigravity.POST("/oauth/refresh-token", h.Admin.AntigravityOAuth.RefreshToken)
+	}
+}
+
+func registerKimiOAuthRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	kimi := admin.Group("/kimi")
+	{
+		kimi.POST("/oauth/auth-url", h.Admin.KimiOAuth.GenerateAuthURL)
+		kimi.POST("/oauth/exchange-code", h.Admin.KimiOAuth.ExchangeCode)
+		kimi.POST("/oauth/refresh-token", h.Admin.KimiOAuth.RefreshToken)
+		kimi.POST("/oauth/accounts/:id/refresh", h.Admin.KimiOAuth.RefreshAccountToken)
 	}
 }
 

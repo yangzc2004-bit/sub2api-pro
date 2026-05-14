@@ -185,6 +185,12 @@ const defaultClientTab = computed(() => {
       return 'gemini'
     case 'antigravity':
       return 'claude'
+    case 'kimi':
+      return 'opencode'
+    case 'mimo':
+      return 'mimo-openai'
+    case 'qwen':
+      return 'opencode'
     default:
       return 'claude'
   }
@@ -288,6 +294,20 @@ const clientTabs = computed((): TabConfig[] => {
         { id: 'gemini', label: t('keys.useKeyModal.cliTabs.geminiCli'), icon: SparkleIcon },
         { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
       ]
+    case 'kimi':
+      return [
+        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+      ]
+    case 'mimo':
+      return [
+        { id: 'mimo-openai', label: 'MiMo OpenAI', icon: TerminalIcon },
+        { id: 'mimo-anthropic', label: 'MiMo Anthropic', icon: TerminalIcon },
+        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+      ]
+    case 'qwen':
+      return [
+        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+      ]
     default:
       return [
         { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon },
@@ -330,6 +350,14 @@ const platformDescription = computed(() => {
       return t('keys.useKeyModal.gemini.description')
     case 'antigravity':
       return t('keys.useKeyModal.antigravity.description')
+    case 'kimi':
+      return 'Kimi Code groups use the OpenAI-compatible /v1/chat/completions endpoint. Use Kimi models such as kimi-k2.6-full or kimi-k2.6-tools-search.'
+    case 'mimo':
+      return activeClientTab.value === 'mimo-anthropic'
+        ? 'MiMo groups use the Anthropic-compatible /v1/messages endpoint. Use mimo-v2.5-pro as the default model.'
+        : 'MiMo groups use the OpenAI-compatible /v1/chat/completions endpoint. Use mimo-v2.5-pro as the default model.'
+    case 'qwen':
+      return 'Qwen groups use the OpenAI-compatible /v1/chat/completions endpoint. Use qwen3.6-plus as the default model. Auth via web session token + cookie.'
     default:
       return t('keys.useKeyModal.description')
   }
@@ -350,6 +378,14 @@ const platformNote = computed(() => {
       return activeClientTab.value === 'claude'
         ? t('keys.useKeyModal.antigravity.claudeNote')
         : t('keys.useKeyModal.antigravity.geminiNote')
+    case 'kimi':
+      return 'Configure OpenCode as a custom OpenAI-compatible provider. Claude Code /v1/messages is not the Kimi group entrypoint.'
+    case 'mimo':
+      return activeClientTab.value === 'mimo-anthropic'
+        ? 'Use your sub2api key as Authorization Bearer. This route is for MiMo Anthropic-compatible messages.'
+        : 'Use your sub2api key as Authorization Bearer. Web search, audio/video input, and TTS should use the MiMo OpenAI-compatible route.'
+    case 'qwen':
+      return 'Configure OpenCode as a custom OpenAI-compatible provider. Use your sub2api key as Authorization Bearer.'
     default:
       return t('keys.useKeyModal.note')
   }
@@ -407,6 +443,12 @@ const currentFiles = computed((): FileConfig[] => {
           generateOpenCodeConfig('antigravity-claude', antigravityBase, apiKey, 'opencode.json (Claude)'),
           generateOpenCodeConfig('antigravity-gemini', antigravityGeminiBase, apiKey, 'opencode.json (Gemini)')
         ]
+      case 'kimi':
+        return [generateOpenCodeConfig('kimi', apiBase, apiKey)]
+      case 'mimo':
+        return [generateOpenCodeConfig('mimo', apiBase, apiKey)]
+      case 'qwen':
+        return [generateOpenCodeConfig('qwen', apiBase, apiKey)]
       default:
         return [generateOpenCodeConfig('openai', apiBase, apiKey)]
     }
@@ -428,6 +470,18 @@ const currentFiles = computed((): FileConfig[] => {
         return [generateGeminiCliContent(`${baseUrl}/antigravity`, apiKey)]
       }
       return generateAnthropicFiles(`${baseUrl}/antigravity`, apiKey)
+    case 'kimi':
+      return [generateOpenCodeConfig('kimi', apiBase, apiKey)]
+    case 'mimo':
+      if (activeClientTab.value === 'mimo-anthropic') {
+        return generateMimoAnthropicFiles(baseUrl, apiKey)
+      }
+      if (activeClientTab.value === 'opencode') {
+        return [generateOpenCodeConfig('mimo', apiBase, apiKey)]
+      }
+      return generateMimoOpenAIFiles(baseUrl, apiKey)
+    case 'qwen':
+      return [generateOpenCodeConfig('qwen', apiBase, apiKey)]
     default:
       return generateAnthropicFiles(baseUrl, apiKey)
   }
@@ -603,6 +657,87 @@ responses_websockets_v2 = true`
     {
       path: `${configDir}/auth.json`,
       content: authContent
+    }
+  ]
+}
+
+function generateMimoOpenAIFiles(baseUrl: string, apiKey: string): FileConfig[] {
+  let path: string
+  let content: string
+
+  switch (activeTab.value) {
+    case 'unix':
+      path = 'Terminal'
+      content = `export OPENAI_BASE_URL="${baseUrl}"
+export OPENAI_API_KEY="${apiKey}"
+export OPENAI_MODEL="mimo-v2.5-pro"`
+      break
+    case 'cmd':
+      path = 'Command Prompt'
+      content = `set OPENAI_BASE_URL=${baseUrl}
+set OPENAI_API_KEY=${apiKey}
+set OPENAI_MODEL=mimo-v2.5-pro`
+      break
+    case 'powershell':
+      path = 'PowerShell'
+      content = `$env:OPENAI_BASE_URL="${baseUrl}"
+$env:OPENAI_API_KEY="${apiKey}"
+$env:OPENAI_MODEL="mimo-v2.5-pro"`
+      break
+    default:
+      path = 'Terminal'
+      content = ''
+  }
+
+  return [
+    { path, content },
+    {
+      path: 'curl',
+      content: `curl ${baseUrl}/v1/chat/completions \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"mimo-v2.5-pro","messages":[{"role":"user","content":"hi"}]}'`
+    }
+  ]
+}
+
+function generateMimoAnthropicFiles(baseUrl: string, apiKey: string): FileConfig[] {
+  let path: string
+  let content: string
+
+  switch (activeTab.value) {
+    case 'unix':
+      path = 'Terminal'
+      content = `export ANTHROPIC_BASE_URL="${baseUrl}"
+export ANTHROPIC_AUTH_TOKEN="${apiKey}"
+export ANTHROPIC_MODEL="mimo-v2.5-pro"`
+      break
+    case 'cmd':
+      path = 'Command Prompt'
+      content = `set ANTHROPIC_BASE_URL=${baseUrl}
+set ANTHROPIC_AUTH_TOKEN=${apiKey}
+set ANTHROPIC_MODEL=mimo-v2.5-pro`
+      break
+    case 'powershell':
+      path = 'PowerShell'
+      content = `$env:ANTHROPIC_BASE_URL="${baseUrl}"
+$env:ANTHROPIC_AUTH_TOKEN="${apiKey}"
+$env:ANTHROPIC_MODEL="mimo-v2.5-pro"`
+      break
+    default:
+      path = 'Terminal'
+      content = ''
+  }
+
+  return [
+    { path, content },
+    {
+      path: 'curl',
+      content: `curl ${baseUrl}/v1/messages \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -H "anthropic-version: 2023-06-01" \\
+  -d '{"model":"mimo-v2.5-pro","max_tokens":256,"messages":[{"role":"user","content":"hi"}]}'`
     }
   ]
 }
@@ -990,6 +1125,105 @@ function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: strin
       }
     }
   }
+  const kimiModels = {
+    'kimi-k2.6-full': {
+      name: 'Kimi K2.6 Full',
+      limit: {
+        context: 262144,
+        output: 65536
+      },
+      modalities: {
+        input: ['text', 'image'],
+        output: ['text']
+      }
+    },
+    'kimi-k2.6-tools-search': {
+      name: 'Kimi K2.6 Tools + Search',
+      limit: {
+        context: 262144,
+        output: 65536
+      },
+      modalities: {
+        input: ['text', 'image'],
+        output: ['text']
+      },
+      options: {
+        tools: true,
+        webSearch: true
+      }
+    },
+    'kimi-k2.6-multimodal': {
+      name: 'Kimi K2.6 Multimodal',
+      limit: {
+        context: 262144,
+        output: 65536
+      },
+      modalities: {
+        input: ['text', 'image'],
+        output: ['text']
+      }
+    },
+    'kimi-k2.6': {
+      name: 'Kimi K2.6',
+      limit: {
+        context: 262144,
+        output: 65536
+      }
+    },
+    'kimi-for-coding': {
+      name: 'Kimi for Coding',
+      limit: {
+        context: 262144,
+        output: 65536
+      }
+    }
+  }
+  const mimoModels = {
+    'mimo-v2.5-pro': {
+      name: 'MiMo 2.5 Pro',
+      limit: {
+        context: 262144,
+        output: 65536
+      },
+      modalities: {
+        input: ['text', 'image', 'audio', 'video'],
+        output: ['text', 'audio']
+      },
+      options: {
+        tools: true,
+        webSearch: true
+      }
+    },
+    'mimo-v2.5': {
+      name: 'MiMo 2.5',
+      limit: {
+        context: 262144,
+        output: 65536
+      },
+      modalities: {
+        input: ['text', 'image', 'audio', 'video'],
+        output: ['text', 'audio']
+      }
+    },
+    'mimo-v2-omni': {
+      name: 'MiMo Omni',
+      limit: {
+        context: 262144,
+        output: 65536
+      },
+      modalities: {
+        input: ['text', 'image', 'audio', 'video'],
+        output: ['text', 'audio']
+      }
+    },
+    'mimo-v2-flash': {
+      name: 'MiMo Flash',
+      limit: {
+        context: 262144,
+        output: 65536
+      }
+    }
+  }
 
   if (platform === 'gemini') {
     provider[platform].npm = '@ai-sdk/google'
@@ -1006,6 +1240,61 @@ function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: strin
     provider[platform].models = antigravityGeminiModels
   } else if (platform === 'openai') {
     provider[platform].models = openaiModels
+  } else if (platform === 'kimi') {
+    provider[platform].name = 'Kimi Code'
+    provider[platform].npm = '@ai-sdk/openai-compatible'
+    provider[platform].models = kimiModels
+  } else if (platform === 'mimo') {
+    provider[platform].name = 'MiMo'
+    provider[platform].npm = '@ai-sdk/openai-compatible'
+    provider[platform].models = mimoModels
+  } else if (platform === 'qwen') {
+    provider[platform].name = 'Qwen'
+    provider[platform].npm = '@ai-sdk/openai-compatible'
+    provider[platform].models = {
+      'qwen3.6-plus': {
+        name: 'Qwen 3.6 Plus',
+        limit: {
+          context: 131072,
+          output: 8192
+        }
+      },
+      'qwen3.6plus': {
+        name: 'Qwen 3.6 Plus (Legacy)',
+        limit: {
+          context: 131072,
+          output: 8192
+        }
+      },
+      'qwen3.6': {
+        name: 'Qwen 3.6',
+        limit: {
+          context: 131072,
+          output: 8192
+        }
+      },
+      'qwen3-coder-plus': {
+        name: 'Qwen 3 Coder Plus',
+        limit: {
+          context: 131072,
+          output: 8192
+        }
+      },
+      'qwen3-coder': {
+        name: 'Qwen 3 Coder',
+        limit: {
+          context: 131072,
+          output: 8192
+        }
+      },
+      'qwq-plus': {
+        name: 'QwQ Plus',
+        limit: {
+          context: 131072,
+          output: 8192
+        }
+      }
+    }
   }
 
   const agent =

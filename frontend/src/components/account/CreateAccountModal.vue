@@ -70,12 +70,15 @@
       <!-- Platform Selection - Segmented Control Style -->
       <div>
         <label class="input-label">{{ t('admin.accounts.platform') }}</label>
-        <div class="mt-2 flex rounded-lg bg-gray-100 p-1 dark:bg-dark-700" data-tour="account-form-platform">
+        <div
+          class="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1 sm:grid-cols-3 xl:grid-cols-6 dark:bg-dark-700"
+          data-tour="account-form-platform"
+        >
           <button
             type="button"
             @click="form.platform = 'anthropic'"
             :class="[
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              'flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
               form.platform === 'anthropic'
                 ? 'bg-white text-orange-600 shadow-sm dark:bg-dark-600 dark:text-orange-400'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
@@ -88,7 +91,7 @@
             type="button"
             @click="form.platform = 'openai'"
             :class="[
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              'flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
               form.platform === 'openai'
                 ? 'bg-white text-green-600 shadow-sm dark:bg-dark-600 dark:text-green-400'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
@@ -111,9 +114,22 @@
           </button>
           <button
             type="button"
+            @click="form.platform = 'deepseek'"
+            :class="[
+              'flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              form.platform === 'deepseek'
+                ? 'bg-white text-sky-600 shadow-sm dark:bg-dark-600 dark:text-sky-400'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            ]"
+          >
+            <Icon name="sparkles" size="sm" />
+            DeepSeek
+          </button>
+          <button
+            type="button"
             @click="form.platform = 'gemini'"
             :class="[
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              'flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
               form.platform === 'gemini'
                 ? 'bg-white text-blue-600 shadow-sm dark:bg-dark-600 dark:text-blue-400'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
@@ -138,7 +154,7 @@
             type="button"
             @click="form.platform = 'antigravity'"
             :class="[
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              'flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
               form.platform === 'antigravity'
                 ? 'bg-white text-purple-600 shadow-sm dark:bg-dark-600 dark:text-purple-400'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
@@ -147,8 +163,98 @@
             <Icon name="cloud" size="sm" />
             Antigravity
           </button>
+          <button
+            type="button"
+            @click="form.platform = 'kimi'"
+            :class="[
+              'flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              form.platform === 'kimi'
+                ? 'bg-white text-cyan-600 shadow-sm dark:bg-dark-600 dark:text-cyan-400'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            ]"
+          >
+            <Icon name="terminal" size="sm" />
+            Kimi
+          </button>
+          <button
+            type="button"
+            @click="form.platform = 'mimo'"
+            :class="[
+              'flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              form.platform === 'mimo'
+                ? 'bg-white text-teal-600 shadow-sm dark:bg-dark-600 dark:text-teal-400'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            ]"
+          >
+            <Icon name="sparkles" size="sm" />
+            MiMo
+          </button>
+          <button
+            type="button"
+            @click="form.platform = 'qwen'"
+            :class="[
+              'flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
+              form.platform === 'qwen'
+                ? 'bg-white text-amber-600 shadow-sm dark:bg-dark-600 dark:text-amber-400'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            ]"
+          >
+            <Icon name="sparkles" size="sm" />
+            Qwen
+          </button>
         </div>
       </div>
+
+      <div v-if="form.platform === 'mimo'" class="rounded-xl border border-teal-200 bg-teal-50/70 p-4 dark:border-teal-900/40 dark:bg-teal-950/20">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 rounded-lg bg-teal-500/10 p-2 text-teal-600 dark:text-teal-300">
+            <Icon name="sparkles" size="sm" />
+          </div>
+          <div class="space-y-1">
+            <div class="text-sm font-semibold text-teal-900 dark:text-teal-100">MiMo Token Plan</div>
+            <p class="text-xs text-teal-800/80 dark:text-teal-200/80">
+              MiMo 账号使用 `apikey` 接入，默认测试模型会使用 `mimo-v2.5-pro`。</p>
+            <p class="text-xs text-teal-800/80 dark:text-teal-200/80">
+              OpenAI-compatible 用于 `/v1/chat/completions`，Anthropic-compatible 用于 `/v1/messages`。</p>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="form.platform === 'qwen'" class="rounded-xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 rounded-lg bg-amber-500/10 p-2 text-amber-600 dark:text-amber-300">
+            <Icon name="sparkles" size="sm" />
+          </div>
+          <div class="space-y-1">
+            <div class="text-sm font-semibold text-amber-900 dark:text-amber-100">Qwen Web</div>
+            <p class="text-xs text-amber-800/80 dark:text-amber-200/80">
+              Qwen 账号使用网页 Session Token + Cookie 接入，反代 <code class="text-xs">chat.qwen.ai</code> 网页版。</p>
+            <p class="text-xs text-amber-800/80 dark:text-amber-200/80">
+              从浏览器 DevTools → Network → <code class="text-xs">chat/completions</code> 请求头中提取。</p>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="form.platform === 'deepseek'"
+        class="rounded-xl border border-sky-200 bg-sky-50/70 p-4 dark:border-sky-900/40 dark:bg-sky-950/20"
+      >
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 rounded-lg bg-sky-500/10 p-2 text-sky-600 dark:text-sky-300">
+            <Icon name="sparkles" size="sm" />
+          </div>
+          <div class="space-y-1">
+            <div class="text-sm font-semibold text-sky-900 dark:text-sky-100">DeepSeek</div>
+            <p class="text-xs text-sky-800/80 dark:text-sky-200/80">
+              OpenAI-compatible API，默认使用 <code class="text-xs">https://api.deepseek.com</code>。
+            </p>
+            <p class="text-xs text-sky-800/80 dark:text-sky-200/80">
+              填写 API Key 即可接入 DeepSeek 模型。
+            </p>
+          </div>
+        </div>
+      </div>
+
 
       <!-- Account Type Selection (Anthropic) -->
       <div v-if="form.platform === 'anthropic'">
@@ -716,6 +822,68 @@
         </div>
       </div>
 
+      <div v-if="form.platform === 'kimi'">
+        <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
+        <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            @click="accountCategory = 'oauth-based'"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              accountCategory === 'oauth-based'
+                ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
+                : 'border-gray-200 hover:border-cyan-300 dark:border-dark-600 dark:hover:border-cyan-700'
+            ]"
+          >
+            <div
+              :class="[
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                accountCategory === 'oauth-based'
+                  ? 'bg-cyan-500 text-white'
+                  : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+              ]"
+            >
+              <Icon name="terminal" size="sm" />
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-gray-900 dark:text-white">Kimi Code OAuth</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">会员额度反代</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div v-if="form.platform === 'mimo'">
+        <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
+        <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            @click="accountCategory = 'apikey'"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              accountCategory === 'apikey'
+                ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20'
+                : 'border-gray-200 hover:border-teal-300 dark:border-dark-600 dark:hover:border-teal-700'
+            ]"
+          >
+            <div
+              :class="[
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                accountCategory === 'apikey'
+                  ? 'bg-teal-500 text-white'
+                  : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+              ]"
+            >
+              <Icon name="key" size="sm" />
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-gray-900 dark:text-white">MiMo Token Plan</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">API Key</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <!-- Account Type Selection (Antigravity - OAuth or Upstream) -->
       <div v-if="form.platform === 'antigravity'">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
@@ -1021,12 +1189,28 @@
                 ? 'https://api.openai.com'
                 : form.platform === 'gemini'
                   ? 'https://generativelanguage.googleapis.com'
+                  : form.platform === 'deepseek'
+                    ? 'https://api.deepseek.com'
+                  : form.platform === 'mimo'
+                    ? 'https://token-plan-cn.xiaomimimo.com/v1'
+                  : form.platform === 'qwen'
+                    ? 'https://chat.qwen.ai/api'
                   : 'https://api.anthropic.com'
             "
           />
           <p class="input-hint">{{ baseUrlHint }}</p>
         </div>
-        <div>
+        <div v-if="form.platform === 'mimo'">
+          <label class="input-label">MiMo Anthropic Base URL</label>
+          <input
+            v-model="mimoAnthropicBaseUrl"
+            type="text"
+            class="input"
+            placeholder="https://token-plan-cn.xiaomimimo.com/anthropic"
+          />
+          <p class="input-hint">用于 MiMo Anthropic-compatible `/v1/messages` 请求，默认指向 Token Plan CN 网关。</p>
+        </div>
+        <div v-if="form.platform !== 'qwen'">
           <label class="input-label">{{ t('admin.accounts.apiKeyRequired') }}</label>
           <input
             v-model="apiKeyValue"
@@ -1038,11 +1222,40 @@
                 ? 'sk-proj-...'
                 : form.platform === 'gemini'
                   ? 'AIza...'
+                  : form.platform === 'deepseek'
+                    ? 'sk-...'
+                  : form.platform === 'mimo'
+                    ? 'tp-...'
                   : 'sk-ant-...'
             "
           />
           <p class="input-hint">{{ apiKeyHint }}</p>
         </div>
+
+        <!-- Qwen Web Token + Cookie -->
+        <template v-if="form.platform === 'qwen'">
+          <div>
+            <label class="input-label">Auth Token (JWT)</label>
+            <input
+              v-model="qwenAuthToken"
+              type="password"
+              required
+              class="input font-mono"
+              placeholder="eyJhbGciOiJIUzI1NiIs..."
+            />
+            <p class="input-hint">从浏览器 DevTools → Network 标签 → chat/completions 请求头中提取 Authorization: Bearer 令牌。</p>
+          </div>
+          <div>
+            <label class="input-label">Cookie</label>
+            <textarea
+              v-model="qwenCookie"
+              class="input font-mono text-xs"
+              rows="3"
+              placeholder="cna=...; cnaui=...; token=..."
+            />
+            <p class="input-hint">从浏览器 DevTools → Network 标签 → chat/completions 请求头中提取完整 Cookie 字符串（可选但推荐提供）。</p>
+          </div>
+        </template>
 
         <!-- Gemini API Key tier selection -->
         <div v-if="form.platform === 'gemini'">
@@ -1497,7 +1710,7 @@
               <option value="ca-central-1">ca-central-1 (Canada)</option>
             </optgroup>
             <optgroup label="South America">
-              <option value="sa-east-1">sa-east-1 (São Paulo)</option>
+              <option value="sa-east-1">sa-east-1 (Sao Paulo)</option>
             </optgroup>
           </select>
           <p class="input-hint">{{ t('admin.accounts.bedrockRegionHint') }}</p>
@@ -1561,7 +1774,7 @@
           <div v-else class="space-y-3">
             <div v-for="(mapping, index) in modelMappings" :key="index" class="flex items-center gap-2">
               <input v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
-              <span class="text-gray-400">→</span>
+              <span class="text-gray-400">?</span>
               <input v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
               <button type="button" @click="modelMappings.splice(index, 1)" class="text-red-500 hover:text-red-700">
                 <Icon name="trash" size="sm" />
@@ -1690,7 +1903,7 @@
         />
       </div>
 
-      <!-- 配额控制 (非 Anthropic apikey/bedrock) -->
+      <!-- 配额控制（非 Anthropic apikey/bedrock） -->
       <div
         v-else-if="form.type === 'apikey' || form.type === 'bedrock'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -2058,7 +2271,7 @@
         </div>
       </div>
 
-      <!-- 配额控制 (Anthropic OAuth/SetupToken: 亲和 + 窗口费用 + 会话 + RPM 等) -->
+      <!-- 配额控制（Anthropic OAuth/SetupToken：亲和 + 窗口费用 + 会话 + RPM） -->
       <div
         v-if="form.platform === 'anthropic' && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -2636,7 +2849,7 @@
               class="flex items-center gap-2"
             >
               <input v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
-              <span class="text-gray-400">→</span>
+              <span class="text-gray-400">?</span>
               <input v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
               <button type="button" @click="removeOpenAICompactModelMapping(index)" class="text-red-500 hover:text-red-700">
                 <Icon name="trash" size="sm" />
@@ -2761,12 +2974,13 @@
         :show-proxy-warning="form.platform !== 'openai' && !!form.proxy_id"
         :allow-multiple="form.platform === 'anthropic'"
         :show-cookie-option="form.platform === 'anthropic'"
-        :show-refresh-token-option="form.platform === 'openai' || form.platform === 'antigravity'"
+        :show-refresh-token-option="form.platform === 'openai' || form.platform === 'antigravity' || form.platform === 'kimi'"
         :show-mobile-refresh-token-option="form.platform === 'openai'"
         :show-session-token-option="false"
         :show-access-token-option="false"
         :platform="form.platform"
         :show-project-id="geminiOAuthType === 'code_assist'"
+        :kimi-user-code="kimiOAuth.userCode.value"
         @generate-url="handleGenerateUrl"
         @cookie-auth="handleCookieAuth"
         @validate-refresh-token="handleValidateRefreshToken"
@@ -2905,7 +3119,7 @@
                 rel="noreferrer"
                 class="text-sm text-blue-600 hover:underline dark:text-blue-400"
               >
-                修改归属地
+                修改归属
               </a>
               <span class="text-gray-400">·</span>
               <a
@@ -3112,6 +3326,7 @@ import {
 import { useOpenAIOAuth } from '@/composables/useOpenAIOAuth'
 import { useGeminiOAuth } from '@/composables/useGeminiOAuth'
 import { useAntigravityOAuth } from '@/composables/useAntigravityOAuth'
+import { useKimiOAuth } from '@/composables/useKimiOAuth'
 import type {
   Proxy,
   AdminGroup,
@@ -3163,6 +3378,7 @@ const oauthStepTitle = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.oauth.openai.title')
   if (form.platform === 'gemini') return t('admin.accounts.oauth.gemini.title')
   if (form.platform === 'antigravity') return t('admin.accounts.oauth.antigravity.title')
+  if (form.platform === 'kimi') return 'Kimi Code OAuth'
   return t('admin.accounts.oauth.title')
 })
 
@@ -3170,15 +3386,21 @@ const oauthStepTitle = computed(() => {
 const baseUrlHint = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.openai.baseUrlHint')
   if (form.platform === 'gemini') return t('admin.accounts.gemini.baseUrlHint')
+  if (form.platform === 'deepseek') return 'DeepSeek OpenAI-compatible Base URL'
+  if (form.platform === 'mimo') return 'MiMo OpenAI-compatible Base URL'
+  if (form.platform === 'kimi') return 'Kimi Code API Base URL'
+  if (form.platform === 'qwen') return 'Qwen Web API Base URL (default: chat.qwen.ai)'
   return t('admin.accounts.baseUrlHint')
 })
 
 const apiKeyHint = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.openai.apiKeyHint')
   if (form.platform === 'gemini') return t('admin.accounts.gemini.apiKeyHint')
+  if (form.platform === 'deepseek') return 'DeepSeek API Key'
+  if (form.platform === 'mimo') return 'MiMo Token Plan API Key, usually starts with tp-'
+  if (form.platform === 'kimi') return 'Kimi API Key'
   return t('admin.accounts.apiKeyHint')
 })
-
 interface Props {
   show: boolean
   proxies: Proxy[]
@@ -3198,12 +3420,14 @@ const oauth = useAccountOAuth() // For Anthropic OAuth
 const openaiOAuth = useOpenAIOAuth() // For OpenAI OAuth
 const geminiOAuth = useGeminiOAuth() // For Gemini OAuth
 const antigravityOAuth = useAntigravityOAuth() // For Antigravity OAuth
+const kimiOAuth = useKimiOAuth()
 
 // Computed: current OAuth state for template binding
 const currentAuthUrl = computed(() => {
   if (form.platform === 'openai') return openaiOAuth.authUrl.value
   if (form.platform === 'gemini') return geminiOAuth.authUrl.value
   if (form.platform === 'antigravity') return antigravityOAuth.authUrl.value
+  if (form.platform === 'kimi') return kimiOAuth.authUrl.value
   return oauth.authUrl.value
 })
 
@@ -3211,6 +3435,7 @@ const currentSessionId = computed(() => {
   if (form.platform === 'openai') return openaiOAuth.sessionId.value
   if (form.platform === 'gemini') return geminiOAuth.sessionId.value
   if (form.platform === 'antigravity') return antigravityOAuth.sessionId.value
+  if (form.platform === 'kimi') return kimiOAuth.sessionId.value
   return oauth.sessionId.value
 })
 
@@ -3218,6 +3443,7 @@ const currentOAuthLoading = computed(() => {
   if (form.platform === 'openai') return openaiOAuth.loading.value
   if (form.platform === 'gemini') return geminiOAuth.loading.value
   if (form.platform === 'antigravity') return antigravityOAuth.loading.value
+  if (form.platform === 'kimi') return kimiOAuth.loading.value
   return oauth.loading.value
 })
 
@@ -3225,6 +3451,7 @@ const currentOAuthError = computed(() => {
   if (form.platform === 'openai') return openaiOAuth.error.value
   if (form.platform === 'gemini') return geminiOAuth.error.value
   if (form.platform === 'antigravity') return antigravityOAuth.error.value
+  if (form.platform === 'kimi') return kimiOAuth.error.value
   return oauth.error.value
 })
 
@@ -3251,6 +3478,9 @@ const accountCategory = ref<'oauth-based' | 'apikey' | 'bedrock' | 'service_acco
 const addMethod = ref<AddMethod>('oauth') // For oauth-based: 'oauth' or 'setup-token'
 const apiKeyBaseUrl = ref('https://api.anthropic.com')
 const apiKeyValue = ref('')
+const qwenAuthToken = ref('')
+const qwenCookie = ref('')
+const mimoAnthropicBaseUrl = ref('https://token-plan-cn.xiaomimimo.com/anthropic')
 const editQuotaLimit = ref<number | null>(null)
 const editQuotaDailyLimit = ref<number | null>(null)
 const editQuotaWeeklyLimit = ref<number | null>(null)
@@ -3531,6 +3761,9 @@ const canExchangeCode = computed(() => {
   if (form.platform === 'antigravity') {
     return authCode.trim() && antigravityOAuth.sessionId.value && !antigravityOAuth.loading.value
   }
+  if (form.platform === 'kimi') {
+    return kimiOAuth.sessionId.value && !kimiOAuth.loading.value
+  }
   return authCode.trim() && oauth.sessionId.value && !oauth.loading.value
 })
 
@@ -3546,7 +3779,7 @@ watch(
       // Modal opened - fill related models
       allowedModels.value = [...getModelsByPlatform(form.platform)]
       // Antigravity: 默认使用映射模式并填充默认映射
-      if (form.platform === 'antigravity') {
+    if (form.platform === 'antigravity') {
         antigravityModelRestrictionMode.value = 'mapping'
         fetchAntigravityDefaultMappings().then(mappings => {
           antigravityModelMappings.value = [...mappings]
@@ -3598,7 +3831,16 @@ watch(
         ? 'https://api.openai.com'
         : newPlatform === 'gemini'
           ? 'https://generativelanguage.googleapis.com'
-          : 'https://api.anthropic.com'
+          : newPlatform === 'deepseek'
+            ? 'https://api.deepseek.com'
+          : newPlatform === 'mimo'
+            ? 'https://token-plan-cn.xiaomimimo.com/v1'
+          : newPlatform === 'kimi'
+            ? 'https://api.kimi.com/coding/v1'
+          : newPlatform === 'qwen'
+            ? 'https://chat.qwen.ai/api'
+            : 'https://api.anthropic.com'
+    mimoAnthropicBaseUrl.value = 'https://token-plan-cn.xiaomimimo.com/anthropic'
     // Clear model-related settings
     allowedModels.value = []
     modelMappings.value = []
@@ -3622,6 +3864,19 @@ watch(
     }
     if (newPlatform !== 'anthropic' && accountCategory.value === 'bedrock') {
       accountCategory.value = 'oauth-based'
+    }
+    if (newPlatform === 'kimi') {
+      accountCategory.value = 'oauth-based'
+      addMethod.value = 'oauth'
+    }
+    if (newPlatform === 'deepseek') {
+      accountCategory.value = 'apikey'
+    }
+    if (newPlatform === 'mimo') {
+      accountCategory.value = 'apikey'
+    }
+    if (newPlatform === 'qwen') {
+      accountCategory.value = 'apikey'
     }
     // Reset Bedrock fields when switching platforms
     bedrockAccessKeyId.value = ''
@@ -3655,6 +3910,7 @@ watch(
 
     geminiOAuth.resetState()
     antigravityOAuth.resetState()
+    kimiOAuth.resetState()
   }
 )
 
@@ -3710,8 +3966,7 @@ watch(
   [antigravityModelRestrictionMode, () => form.platform],
   ([, platform]) => {
     if (platform !== 'antigravity') return
-    // Antigravity 默认不做限制：白名单留空表示允许所有（包含未来新增模型）。
-    // 如果需要快速填充常用模型，可在组件内点“填充相关模型”。
+    // Antigravity model mappings are managed by explicit controls.
   }
 )
 
@@ -4010,6 +4265,9 @@ const resetForm = () => {
   addMethod.value = 'oauth'
   apiKeyBaseUrl.value = 'https://api.anthropic.com'
   apiKeyValue.value = ''
+  qwenAuthToken.value = ''
+  qwenCookie.value = ''
+  mimoAnthropicBaseUrl.value = 'https://token-plan-cn.xiaomimimo.com/anthropic'
   editQuotaLimit.value = null
   editQuotaDailyLimit.value = null
   editQuotaWeeklyLimit.value = null
@@ -4104,8 +4362,7 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
     extra.openai_apikey_responses_websockets_v2_mode = openaiAPIKeyResponsesWebSocketV2Mode.value
     extra.openai_apikey_responses_websockets_v2_enabled = isOpenAIWSModeEnabled(openaiAPIKeyResponsesWebSocketV2Mode.value)
   }
-  // 清理兼容旧键，统一改用分类型开关。
-  delete extra.responses_websockets_v2_enabled
+  // 清理兼容旧键，统一改用分类型开关
   delete extra.openai_ws_enabled
   if (openaiPassthroughEnabled.value) {
     extra.openai_passthrough = true
@@ -4376,8 +4633,12 @@ const handleSubmit = async () => {
   }
 
   // For apikey type, create directly
-  if (!apiKeyValue.value.trim()) {
+  if (form.platform !== 'qwen' && !apiKeyValue.value.trim()) {
     appStore.showError(t('admin.accounts.pleaseEnterApiKey'))
+    return
+  }
+  if (form.platform === 'qwen' && !qwenAuthToken.value.trim()) {
+    appStore.showError('Please enter Qwen Auth Token')
     return
   }
 
@@ -4387,19 +4648,39 @@ const handleSubmit = async () => {
       ? 'https://api.openai.com'
       : form.platform === 'gemini'
         ? 'https://generativelanguage.googleapis.com'
+        : form.platform === 'deepseek'
+          ? 'https://api.deepseek.com'
+        : form.platform === 'mimo'
+          ? 'https://token-plan-cn.xiaomimimo.com/v1'
+        : form.platform === 'kimi'
+          ? 'https://api.kimi.com/coding/v1'
+        : form.platform === 'qwen'
+          ? 'https://chat.qwen.ai/api'
         : 'https://api.anthropic.com'
 
   // Build credentials with optional model mapping
   const credentials: Record<string, unknown> = {
     base_url: apiKeyBaseUrl.value.trim() || defaultBaseUrl,
-    api_key: apiKeyValue.value.trim()
+  }
+  if (form.platform === 'qwen') {
+    credentials.auth_token = qwenAuthToken.value.trim()
+    const cookie = qwenCookie.value.trim()
+    if (cookie) {
+      credentials.cookie = cookie
+    }
+  } else {
+    credentials.api_key = apiKeyValue.value.trim()
+  }
+  if (form.platform === 'mimo') {
+    credentials.mimo_openai_base_url = apiKeyBaseUrl.value.trim() || defaultBaseUrl
+    credentials.mimo_anthropic_base_url = mimoAnthropicBaseUrl.value.trim() || 'https://token-plan-cn.xiaomimimo.com/anthropic'
   }
   if (form.platform === 'gemini') {
     credentials.tier_id = geminiTierAIStudio.value
   }
 
-  // Add model mapping if configured（OpenAI 开启自动透传时不应用）
-  if (!isOpenAIModelRestrictionDisabled.value) {
+  // Add model mapping if configured
+    if (!isOpenAIModelRestrictionDisabled.value) {
     const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
     if (modelMapping) {
       credentials.model_mapping = modelMapping
@@ -4446,6 +4727,7 @@ const goBackToBasicInfo = () => {
   openaiOAuth.resetState()
   geminiOAuth.resetState()
   antigravityOAuth.resetState()
+  kimiOAuth.resetState()
   oauthFlowRef.value?.reset()
 }
 
@@ -4461,6 +4743,8 @@ const handleGenerateUrl = async () => {
     )
   } else if (form.platform === 'antigravity') {
     await antigravityOAuth.generateAuthUrl(form.proxy_id)
+  } else if (form.platform === 'kimi') {
+    await kimiOAuth.generateAuthUrl(form.proxy_id)
   } else {
     await oauth.generateAuthUrl(addMethod.value, form.proxy_id)
   }
@@ -4471,6 +4755,8 @@ const handleValidateRefreshToken = (rt: string) => {
     handleOpenAIValidateRT(rt)
   } else if (form.platform === 'antigravity') {
     handleAntigravityValidateRT(rt)
+  } else if (form.platform === 'kimi') {
+    handleKimiValidateRT(rt)
   }
 }
 
@@ -4628,7 +4914,6 @@ const handleOpenAIExchange = async (authCode: string) => {
 }
 
 // OpenAI 手动 RT 批量验证和创建
-// OpenAI Mobile RT client_id
 const OPENAI_MOBILE_RT_CLIENT_ID = 'app_LlGpXReQgckcGGUo2JrYvtJK'
 
 // OpenAI RT 批量验证和创建（共享逻辑）
@@ -4677,7 +4962,7 @@ const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string)
         const extra = buildOpenAIExtra(oauthExtra)
 
         // Add model mapping for OpenAI OAuth accounts（透传模式下不应用）
-        if (shouldCreateOpenAI && !isOpenAIModelRestrictionDisabled.value) {
+    if (shouldCreateOpenAI && !isOpenAIModelRestrictionDisabled.value) {
           const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
           if (modelMapping) {
             credentials.model_mapping = modelMapping
@@ -4843,6 +5128,96 @@ const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
 }
 
 // Gemini OAuth 授权码兑换
+const addKimiModelMapping = (credentials: Record<string, unknown>) => {
+  const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
+  if (modelMapping) {
+    credentials.model_mapping = modelMapping
+  }
+  if (!credentials.base_url) {
+    credentials.base_url = 'https://api.kimi.com/coding/v1'
+  }
+}
+
+const handleKimiExchange = async () => {
+  if (!kimiOAuth.sessionId.value) return
+  kimiOAuth.loading.value = true
+  kimiOAuth.error.value = ''
+  try {
+    const tokenInfo = await kimiOAuth.exchangeDeviceCode(kimiOAuth.sessionId.value, form.proxy_id)
+    if (!tokenInfo) return
+    const credentials = kimiOAuth.buildCredentials(tokenInfo)
+    addKimiModelMapping(credentials)
+    await createAccountAndFinish('kimi', 'oauth', credentials)
+  } catch (error: any) {
+    kimiOAuth.error.value = error.response?.data?.detail || t('admin.accounts.oauth.authFailed')
+    appStore.showError(kimiOAuth.error.value)
+  } finally {
+    kimiOAuth.loading.value = false
+  }
+}
+
+const handleKimiValidateRT = async (refreshTokenInput: string) => {
+  if (!refreshTokenInput.trim()) return
+  const refreshTokens = refreshTokenInput
+    .split('\n')
+    .map((rt) => rt.trim())
+    .filter((rt) => rt)
+
+  kimiOAuth.loading.value = true
+  kimiOAuth.error.value = ''
+  let successCount = 0
+  let failedCount = 0
+  const errors: string[] = []
+  try {
+    for (let i = 0; i < refreshTokens.length; i++) {
+      try {
+        const tokenInfo = await kimiOAuth.validateRefreshToken(refreshTokens[i], form.proxy_id)
+        if (!tokenInfo) {
+          failedCount++
+          errors.push(`#${i + 1}: ${kimiOAuth.error.value || 'Validation failed'}`)
+          kimiOAuth.error.value = ''
+          continue
+        }
+        const credentials = kimiOAuth.buildCredentials(tokenInfo)
+        addKimiModelMapping(credentials)
+        await adminAPI.accounts.create({
+          name: refreshTokens.length > 1 ? `${form.name} #${i + 1}` : form.name,
+          notes: form.notes,
+          platform: 'kimi',
+          type: 'oauth',
+          credentials,
+          proxy_id: form.proxy_id,
+          concurrency: form.concurrency,
+          load_factor: form.load_factor ?? undefined,
+          priority: form.priority,
+          rate_multiplier: form.rate_multiplier,
+          group_ids: form.group_ids,
+          expires_at: form.expires_at,
+          auto_pause_on_expired: autoPauseOnExpired.value
+        })
+        successCount++
+      } catch (error: any) {
+        failedCount++
+        errors.push(`#${i + 1}: ${error.response?.data?.detail || error.message || 'Unknown error'}`)
+      }
+    }
+    if (successCount > 0 && failedCount === 0) {
+      appStore.showSuccess(successCount > 1 ? t('admin.accounts.oauth.batchSuccess', { count: successCount }) : t('admin.accounts.accountCreated'))
+      emit('created')
+      handleClose()
+    } else if (successCount > 0) {
+      appStore.showWarning(t('admin.accounts.oauth.batchPartialSuccess', { success: successCount, failed: failedCount }))
+      kimiOAuth.error.value = errors.join('\n')
+      emit('created')
+    } else {
+      kimiOAuth.error.value = errors.join('\n')
+      appStore.showError(t('admin.accounts.oauth.batchFailed'))
+    }
+  } finally {
+    kimiOAuth.loading.value = false
+  }
+}
+
 const handleGeminiExchange = async (authCode: string) => {
   if (!authCode.trim() || !geminiOAuth.sessionId.value) return
 
@@ -4906,7 +5281,7 @@ const handleAntigravityExchange = async (authCode: string) => {
 		const credentials = antigravityOAuth.buildCredentials(tokenInfo)
 		applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
 		// Antigravity 只使用映射模式
-		const antigravityModelMapping = buildModelMappingObject(
+    const antigravityModelMapping = buildModelMappingObject(
 			'mapping',
 			[],
 			antigravityModelMappings.value
@@ -5024,6 +5399,8 @@ const handleExchangeCode = async () => {
       return handleGeminiExchange(authCode)
     case 'antigravity':
       return handleAntigravityExchange(authCode)
+    case 'kimi':
+      return handleKimiExchange()
     default:
       return handleAnthropicExchange(authCode)
   }
@@ -5096,7 +5473,7 @@ const handleCookieAuth = async (sessionKey: string) => {
         }
 
         // UMQ mode（独立于 RPM）
-        if (userMsgQueueMode.value) {
+    if (userMsgQueueMode.value) {
           extra.user_msg_queue_mode = userMsgQueueMode.value
         }
 

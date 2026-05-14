@@ -164,6 +164,22 @@ func (a *Account) IsGemini() bool {
 	return a.Platform == PlatformGemini
 }
 
+func (a *Account) IsKimi() bool {
+	return a.Platform == PlatformKimi
+}
+
+func (a *Account) IsMimo() bool {
+	return a.Platform == PlatformMimo
+}
+
+func (a *Account) IsQwen() bool {
+	return a.Platform == PlatformQwen
+}
+
+func (a *Account) IsKimiOAuth() bool {
+	return a.Platform == PlatformKimi && a.Type == AccountTypeOAuth
+}
+
 func (a *Account) GeminiOAuthType() string {
 	if a.Platform != PlatformGemini || a.Type != AccountTypeOAuth {
 		return ""
@@ -482,6 +498,18 @@ func (a *Account) resolveModelMapping(rawMapping map[string]any) map[string]stri
 		if a.Platform == domain.PlatformAntigravity {
 			return domain.DefaultAntigravityModelMapping
 		}
+		if a.Platform == domain.PlatformKimi {
+			return domain.DefaultKimiModelMapping
+		}
+		if a.Platform == domain.PlatformMimo {
+			return domain.DefaultMimoModelMapping
+		}
+		if a.Platform == domain.PlatformQwen {
+			return domain.DefaultQwenModelMapping
+		}
+		if a.Platform == domain.PlatformDeepSeek {
+			return domain.DefaultDeepSeekModelMapping
+		}
 		// Bedrock 默认映射由 forwardBedrock 统一处理（需配合 region prefix 调整）
 		return nil
 	}
@@ -489,6 +517,18 @@ func (a *Account) resolveModelMapping(rawMapping map[string]any) map[string]stri
 		// Antigravity 平台使用默认映射
 		if a.Platform == domain.PlatformAntigravity {
 			return domain.DefaultAntigravityModelMapping
+		}
+		if a.Platform == domain.PlatformKimi {
+			return domain.DefaultKimiModelMapping
+		}
+		if a.Platform == domain.PlatformMimo {
+			return domain.DefaultMimoModelMapping
+		}
+		if a.Platform == domain.PlatformQwen {
+			return domain.DefaultQwenModelMapping
+		}
+		if a.Platform == domain.PlatformDeepSeek {
+			return domain.DefaultDeepSeekModelMapping
 		}
 		return nil
 	}
@@ -507,6 +547,9 @@ func (a *Account) resolveModelMapping(rawMapping map[string]any) map[string]stri
 				"gemini-3.1-pro-low",
 			})
 		}
+		if a.Platform == domain.PlatformQwen {
+			ensureQwenModelAliases(result)
+		}
 		return result
 	}
 
@@ -514,7 +557,39 @@ func (a *Account) resolveModelMapping(rawMapping map[string]any) map[string]stri
 	if a.Platform == domain.PlatformAntigravity {
 		return domain.DefaultAntigravityModelMapping
 	}
+	if a.Platform == domain.PlatformKimi {
+		return domain.DefaultKimiModelMapping
+	}
+	if a.Platform == domain.PlatformMimo {
+		return domain.DefaultMimoModelMapping
+	}
+	if a.Platform == domain.PlatformQwen {
+		return domain.DefaultQwenModelMapping
+	}
+	if a.Platform == domain.PlatformDeepSeek {
+		return domain.DefaultDeepSeekModelMapping
+	}
 	return nil
+}
+
+func ensureDeepSeekV4ModelAliases(mapping map[string]string) {
+	if mapping == nil {
+		return
+	}
+	mapping["deepseek-v4-flash"] = "deepseek-v4-flash"
+	mapping["deepseek-v4-pro"] = "deepseek-v4-pro"
+	delete(mapping, "deepseek-chat")
+	delete(mapping, "deepseek-coder")
+	delete(mapping, "deepseek-reasoner")
+	delete(mapping, "deepseek-v3")
+	delete(mapping, "deepseek-v3-0324")
+	delete(mapping, "deepseek-r1")
+	delete(mapping, "deepseek-r1-0528")
+	delete(mapping, "deepseek-r1-distill-qwen-32b")
+	delete(mapping, "deepseek-r1-distill-qwen-14b")
+	delete(mapping, "deepseek-r1-distill-qwen-7b")
+	delete(mapping, "deepseek-r1-distill-llama-70b")
+	delete(mapping, "deepseek-r1-distill-llama-8b")
 }
 
 func mapPtr(m map[string]any) uintptr {
@@ -574,6 +649,9 @@ func normalizeRequestedModelForLookup(platform, requestedModel string) string {
 	if trimmed == "" {
 		return ""
 	}
+	if platform == PlatformQwen {
+		return normalizeQwenModelAlias(trimmed)
+	}
 	if platform != PlatformGemini && platform != PlatformAntigravity {
 		return trimmed
 	}
@@ -606,6 +684,36 @@ func resolveRequestedModelInMapping(mapping map[string]string, requestedModel st
 		return mappedModel, true
 	}
 	return matchWildcardMappingResult(mapping, requestedModel)
+}
+
+func normalizeQwenModelAlias(model string) string {
+	trimmed := strings.TrimSpace(model)
+	if trimmed == "qwen3.6plus" {
+		return "qwen3.6-plus"
+	}
+	return trimmed
+}
+
+func ensureQwenModelAliases(mapping map[string]string) {
+	if mapping == nil {
+		return
+	}
+	const canonical = "qwen3.6-plus"
+	const legacy = "qwen3.6plus"
+	canonicalTarget, hasCanonical := mapping[canonical]
+	legacyTarget, hasLegacy := mapping[legacy]
+	switch {
+	case hasCanonical && !hasLegacy:
+		mapping[legacy] = canonicalTarget
+	case hasLegacy && !hasCanonical:
+		mapping[canonical] = legacyTarget
+	}
+	if target, ok := mapping[canonical]; ok {
+		mapping[canonical] = normalizeQwenModelAlias(target)
+	}
+	if target, ok := mapping[legacy]; ok {
+		mapping[legacy] = normalizeQwenModelAlias(target)
+	}
 }
 
 // IsModelSupported 检查模型是否在 model_mapping 中（支持通配符）
@@ -663,6 +771,9 @@ func (a *Account) GetOpenAICompactMode() string {
 func (a *Account) OpenAICompactSupportKnown() (supported bool, known bool) {
 	if a == nil || !a.IsOpenAI() {
 		return false, false
+	}
+	if a.IsDeepSeek() {
+		return false, true
 	}
 
 	switch a.GetOpenAICompactMode() {
@@ -725,6 +836,9 @@ func (a *Account) GetBaseURL() string {
 	}
 	baseURL := a.GetCredential("base_url")
 	if baseURL == "" {
+		if a.Platform == PlatformDeepSeek {
+			return domain.DeepSeekDefaultOpenAIBaseURL
+		}
 		return "https://api.anthropic.com"
 	}
 	if a.Platform == PlatformAntigravity {
@@ -744,6 +858,93 @@ func (a *Account) GetGeminiBaseURL(defaultBaseURL string) string {
 		return strings.TrimRight(baseURL, "/") + "/antigravity"
 	}
 	return baseURL
+}
+
+func (a *Account) GetKimiBaseURL() string {
+	baseURL := strings.TrimSpace(a.GetCredential("base_url"))
+	if baseURL == "" {
+		return "https://api.kimi.com/coding/v1"
+	}
+	return baseURL
+}
+
+func (a *Account) GetMimoAPIKey() string {
+	if a == nil || !a.IsMimo() || a.Type != AccountTypeAPIKey {
+		return ""
+	}
+	return strings.TrimSpace(a.GetCredential("api_key"))
+}
+
+func (a *Account) GetMimoOpenAIBaseURL() string {
+	if a == nil || !a.IsMimo() {
+		return ""
+	}
+	if baseURL := strings.TrimSpace(a.GetCredential("mimo_openai_base_url")); baseURL != "" {
+		return baseURL
+	}
+	if baseURL := strings.TrimSpace(a.GetCredential("openai_base_url")); baseURL != "" {
+		return baseURL
+	}
+	if baseURL := strings.TrimSpace(a.GetCredential("base_url")); baseURL != "" {
+		return baseURL
+	}
+	return domain.MimoDefaultOpenAIBaseURL
+}
+
+func (a *Account) GetMimoAnthropicBaseURL() string {
+	if a == nil || !a.IsMimo() {
+		return ""
+	}
+	if baseURL := strings.TrimSpace(a.GetCredential("mimo_anthropic_base_url")); baseURL != "" {
+		return baseURL
+	}
+	if baseURL := strings.TrimSpace(a.GetCredential("anthropic_base_url")); baseURL != "" {
+		return baseURL
+	}
+	if openAIBaseURL := strings.TrimSpace(a.GetMimoOpenAIBaseURL()); openAIBaseURL != "" {
+		derived := strings.TrimRight(openAIBaseURL, "/")
+		if strings.HasSuffix(derived, "/v1") {
+			return strings.TrimSuffix(derived, "/v1") + "/anthropic"
+		}
+		if !strings.HasSuffix(derived, "/anthropic") {
+			return derived + "/anthropic"
+		}
+		return derived
+	}
+	return domain.MimoDefaultAnthropicBaseURL
+}
+
+func (a *Account) GetQwenBaseURL() string {
+	if a == nil || !a.IsQwen() {
+		return ""
+	}
+	if baseURL := strings.TrimSpace(a.GetCredential("qwen_base_url")); baseURL != "" {
+		return baseURL
+	}
+	if baseURL := strings.TrimSpace(a.GetCredential("base_url")); baseURL != "" {
+		return baseURL
+	}
+	return domain.QwenDefaultChatCompletionsURL
+}
+
+// GetQwenAuthToken 返回 Qwen 网页版的 JWT Bearer token。
+func (a *Account) GetQwenAuthToken() string {
+	if a == nil || !a.IsQwen() {
+		return ""
+	}
+	if token := strings.TrimSpace(a.GetCredential("auth_token")); token != "" {
+		return token
+	}
+	// 兼容旧格式：如果 auth_token 不存在，尝试使用 api_key 作为 Bearer token
+	return strings.TrimSpace(a.GetCredential("api_key"))
+}
+
+// GetQwenCookie 返回 Qwen 网页版的完整 Cookie 字符串。
+func (a *Account) GetQwenCookie() string {
+	if a == nil || !a.IsQwen() {
+		return ""
+	}
+	return strings.TrimSpace(a.GetCredential("cookie"))
 }
 
 func (a *Account) GetExtraString(key string) string {
@@ -962,7 +1163,11 @@ func (a *Account) IsAPIKeyOrBedrock() bool {
 }
 
 func (a *Account) IsOpenAI() bool {
-	return a.Platform == PlatformOpenAI
+	return a.Platform == PlatformOpenAI || a.Platform == PlatformDeepSeek
+}
+
+func (a *Account) IsDeepSeek() bool {
+	return a.Platform == PlatformDeepSeek
 }
 
 func (a *Account) IsAnthropic() bool {
@@ -982,9 +1187,12 @@ func (a *Account) GetOpenAIBaseURL() string {
 		return ""
 	}
 	if a.Type == AccountTypeAPIKey {
-		baseURL := a.GetCredential("base_url")
+		baseURL := strings.TrimSpace(a.GetCredential("base_url"))
 		if baseURL != "" {
 			return baseURL
+		}
+		if a.IsDeepSeek() {
+			return domain.DeepSeekDefaultOpenAIBaseURL
 		}
 	}
 	return "https://api.openai.com"
@@ -1052,6 +1260,9 @@ func (a *Account) SupportsOpenAIImageCapability(capability OpenAIImagesCapabilit
 	}
 	switch capability {
 	case OpenAIImagesCapabilityBasic, OpenAIImagesCapabilityNative:
+		if a.IsDeepSeek() {
+			return false
+		}
 		return a.Type == AccountTypeOAuth || a.Type == AccountTypeAPIKey
 	default:
 		return true

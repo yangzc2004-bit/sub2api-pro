@@ -201,9 +201,12 @@ export function appendAuthSourceDefaultsToUpdateRequest(
   authSourceDefaults: AuthSourceDefaultsState,
 ): UpdateSettingsRequest {
   const target = payload as Record<string, unknown>;
+  const fallbackDefaults = buildAuthSourceDefaultsState({});
 
   for (const source of AUTH_SOURCE_TYPES) {
-    const current = authSourceDefaults[source];
+    const current =
+      authSourceDefaults[source] ??
+      fallbackDefaults[source];
     target[`auth_source_default_${source}_balance`] =
       Number(current.balance) || 0;
     target[`auth_source_default_${source}_concurrency`] = Math.max(

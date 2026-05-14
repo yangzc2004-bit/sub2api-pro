@@ -276,6 +276,10 @@ let abortController: AbortController | null = null
 const generatedImages = ref<PreviewImage[]>([])
 const previewImageUrl = ref('')
 const prioritizedGeminiModels = ['gemini-3.1-flash-image', 'gemini-2.5-flash-image', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3-pro-preview', 'gemini-2.0-flash']
+const prioritizedKimiModels = ['kimi-k2.6-full', 'kimi-k2.6-tools-search', 'kimi-k2.6-multimodal', 'kimi-k2.6', 'kimi-for-coding']
+const prioritizedMimoModels = ['mimo-v2.5-pro', 'mimo-v2.5', 'mimo-v2-omni', 'mimo-v2-pro', 'mimo-v2-flash', 'mimo-v2.5-tts']
+const prioritizedQwenModels = ['qwen3.6-plus', 'qwen3.6plus', 'qwen3.6', 'qwen3-coder-plus', 'qwen3-coder', 'qwq-plus']
+const prioritizedDeepSeekModels = ['deepseek-v4-flash', 'deepseek-v4-pro']
 const supportsGeminiImageTest = computed(() => {
   const modelID = selectedModelId.value.toLowerCase()
   if (!modelID.startsWith('gemini-') || !modelID.includes('-image')) return false
@@ -292,7 +296,17 @@ const supportsOpenAIImageTest = computed(() => {
 const supportsImageTest = computed(() => supportsGeminiImageTest.value || supportsOpenAIImageTest.value)
 
 const sortTestModels = (models: ClaudeModel[]) => {
-  const priorityMap = new Map(prioritizedGeminiModels.map((id, index) => [id, index]))
+  const priorityList =
+    props.account?.platform === 'kimi'
+      ? prioritizedKimiModels
+      : props.account?.platform === 'mimo'
+        ? prioritizedMimoModels
+        : props.account?.platform === 'qwen'
+          ? prioritizedQwenModels
+          : props.account?.platform === 'deepseek'
+            ? prioritizedDeepSeekModels
+        : prioritizedGeminiModels
+  const priorityMap = new Map(priorityList.map((id, index) => [id, index]))
 
   return [...models].sort((a, b) => {
     const aPriority = priorityMap.get(a.id) ?? Number.MAX_SAFE_INTEGER
@@ -301,20 +315,6 @@ const sortTestModels = (models: ClaudeModel[]) => {
     return 0
   })
 }
-
-// Load available models when modal opens
-watch(
-  () => props.show,
-  async (newVal) => {
-    if (newVal && props.account) {
-      testPrompt.value = ''
-      resetState()
-      await loadAvailableModels()
-    } else {
-      abortStream()
-    }
-  }
-)
 
 watch(selectedModelId, () => {
   if (supportsImageTest.value && !testPrompt.value.trim()) {
@@ -329,12 +329,12 @@ const loadAvailableModels = async () => {
   selectedModelId.value = '' // Reset selection before loading
   try {
     const models = await adminAPI.accounts.getAvailableModels(props.account.id)
-    availableModels.value = props.account.platform === 'gemini' || props.account.platform === 'antigravity'
+    availableModels.value = props.account.platform === 'gemini' || props.account.platform === 'antigravity' || props.account.platform === 'kimi' || props.account.platform === 'mimo' || props.account.platform === 'qwen' || props.account.platform === 'deepseek'
       ? sortTestModels(models)
       : models
     // Default selection by platform
     if (availableModels.value.length > 0) {
-      if (props.account.platform === 'gemini') {
+      if (props.account.platform === 'gemini' || props.account.platform === 'kimi' || props.account.platform === 'mimo' || props.account.platform === 'qwen' || props.account.platform === 'deepseek') {
         selectedModelId.value = availableModels.value[0].id
       } else {
         // Try to select Sonnet as default, otherwise use first model
@@ -372,6 +372,21 @@ const abortStream = () => {
     abortController = null
   }
 }
+
+// Load available models when modal opens
+watch(
+  () => props.show,
+  async (newVal) => {
+    if (newVal && props.account) {
+      testPrompt.value = ''
+      resetState()
+      await loadAvailableModels()
+    } else {
+      abortStream()
+    }
+  },
+  { immediate: true }
+)
 
 const addLine = (text: string, className: string = 'text-gray-300') => {
   outputLines.value.push({ text, class: className })

@@ -22,6 +22,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/kimi"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
@@ -661,7 +662,20 @@ func (h *AccountHandler) Update(c *gin.Context) {
 // 当前请求。探测错误仅记录日志，不向上下文传播：探测失败时标记保持缺失，
 // 网关会按"现状即证据"默认走 Responses。
 func (h *AccountHandler) scheduleOpenAIResponsesProbe(account *service.Account) {
-	if account == nil || account.Platform != service.PlatformOpenAI || account.Type != service.AccountTypeAPIKey {
+	if account == nil || account.Type != service.AccountTypeAPIKey {
+		return
+	}
+	if account.Platform == service.PlatformDeepSeek {
+		if h.adminService != nil {
+			_, _ = h.adminService.UpdateAccount(context.Background(), account.ID, &service.UpdateAccountInput{
+				Extra: map[string]any{
+					"openai_responses_supported": false,
+				},
+			})
+		}
+		return
+	}
+	if account.Platform != service.PlatformOpenAI {
 		return
 	}
 	if h.accountTestService == nil {
@@ -1872,6 +1886,10 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 	// Handle OpenAI accounts
 	if account.IsOpenAI() {
+		if account.IsDeepSeek() {
+			response.Success(c, deepSeekDefaultModels())
+			return
+		}
 		// OpenAI 自动透传会绕过常规模型改写，测试/模型列表也应回落到默认模型集。
 		if account.IsOpenAIPassthroughEnabled() {
 			response.Success(c, openai.DefaultModels)
@@ -1953,6 +1971,110 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 		return
 	}
 
+	if account.Platform == service.PlatformKimi {
+		mapping := account.GetModelMapping()
+		if len(mapping) == 0 {
+			response.Success(c, kimi.DefaultModels)
+			return
+		}
+
+		var models []kimi.Model
+		for _, dm := range kimi.DefaultModels {
+			if _, ok := mapping[dm.ID]; ok {
+				models = append(models, dm)
+			}
+		}
+		for requestedModel := range mapping {
+			var found bool
+			for _, dm := range kimi.DefaultModels {
+				if dm.ID == requestedModel {
+					found = true
+					break
+				}
+			}
+			if !found {
+				models = append(models, kimi.Model{
+					ID:          requestedModel,
+					Type:        "model",
+					DisplayName: requestedModel,
+					CreatedAt:   "",
+				})
+			}
+		}
+		response.Success(c, models)
+		return
+	}
+
+	if account.Platform == service.PlatformMimo {
+		mapping := account.GetModelMapping()
+		defaultModels := mimoDefaultModels()
+		if len(mapping) == 0 {
+			response.Success(c, defaultModels)
+			return
+		}
+
+		var models []openai.Model
+		for _, dm := range defaultModels {
+			if _, ok := mapping[dm.ID]; ok {
+				models = append(models, dm)
+			}
+		}
+		for requestedModel := range mapping {
+			var found bool
+			for _, dm := range defaultModels {
+				if dm.ID == requestedModel {
+					found = true
+					break
+				}
+			}
+			if !found {
+				models = append(models, openai.Model{
+					ID:          requestedModel,
+					Object:      "model",
+					Type:        "model",
+					DisplayName: requestedModel,
+				})
+			}
+		}
+		response.Success(c, models)
+		return
+	}
+
+	if account.Platform == service.PlatformQwen {
+		mapping := account.GetModelMapping()
+		defaultModels := qwenDefaultModels()
+		if len(mapping) == 0 {
+			response.Success(c, defaultModels)
+			return
+		}
+
+		var models []openai.Model
+		for _, dm := range defaultModels {
+			if _, ok := mapping[dm.ID]; ok {
+				models = append(models, dm)
+			}
+		}
+		for requestedModel := range mapping {
+			var found bool
+			for _, dm := range defaultModels {
+				if dm.ID == requestedModel {
+					found = true
+					break
+				}
+			}
+			if !found {
+				models = append(models, openai.Model{
+					ID:          requestedModel,
+					Object:      "model",
+					Type:        "model",
+					DisplayName: requestedModel,
+				})
+			}
+		}
+		response.Success(c, models)
+		return
+	}
+
 	// Handle Claude/Anthropic accounts
 	// For OAuth and Setup-Token accounts: return default models
 	if account.IsOAuth() {
@@ -1992,6 +2114,71 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 	}
 
 	response.Success(c, models)
+}
+
+func deepSeekDefaultModels() []openai.Model {
+	return []openai.Model{
+		{
+			ID:          "deepseek-v4-flash",
+			Object:      "model",
+			Type:        "model",
+			DisplayName: "deepseek-v4-flash",
+		},
+		{
+			ID:          "deepseek-v4-pro",
+			Object:      "model",
+			Type:        "model",
+			DisplayName: "deepseek-v4-pro",
+		},
+	}
+}
+
+func mimoDefaultModels() []openai.Model {
+	ids := []string{
+		"mimo-v2.5-pro",
+		"mimo-v2.5",
+		"mimo-v2-pro",
+		"mimo-v2-omni",
+		"mimo-v2-flash",
+		"mimo-v2.5-tts",
+		"mimo-v2.5-tts-voicedesign",
+		"mimo-v2.5-tts-voiceclone",
+	}
+	models := make([]openai.Model, 0, len(ids))
+	for _, id := range ids {
+		models = append(models, openai.Model{
+			ID:          id,
+			Object:      "model",
+			Type:        "model",
+			DisplayName: id,
+			OwnedBy:     "xiaomi-mimo",
+		})
+	}
+	return models
+}
+
+func qwenDefaultModels() []openai.Model {
+	ids := []string{
+		"qwen3.6-plus",
+		"qwen3.6plus",
+		"qwen3.6",
+		"qwen3-coder-plus",
+		"qwen3-coder",
+		"qwen3-coder-flash",
+		"qwq-plus",
+		"qwen3.5-vl-plus",
+	}
+	models := make([]openai.Model, 0, len(ids))
+	for _, id := range ids {
+		models = append(models, openai.Model{
+			ID:          id,
+			Object:      "model",
+			Type:        "model",
+			DisplayName: id,
+			OwnedBy:     "alibaba-qwen",
+		})
+	}
+	return models
 }
 
 // SetPrivacy handles setting privacy for a single OpenAI/Antigravity OAuth account

@@ -19,6 +19,22 @@
   <svg v-else-if="platform === 'antigravity'" :class="sizeClass" viewBox="0 0 24 24" fill="currentColor">
     <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
   </svg>
+  <!-- Kimi logo (terminal prompt) -->
+  <svg v-else-if="platform === 'kimi'" :class="sizeClass" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm1.5 4.2l3.3 3.3-3.3 3.3 1.4 1.4 4.7-4.7-4.7-4.7-1.4 1.4zM12 15h6v-2h-6v2z" />
+  </svg>
+  <!-- MiMo logo -->
+  <svg v-else-if="platform === 'mimo'" :class="sizeClass" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M4 5.5A1.5 1.5 0 015.5 4h3.379a1.5 1.5 0 011.06.44L12 6.5l2.061-2.06A1.5 1.5 0 0115.12 4H18.5A1.5 1.5 0 0120 5.5v13a1.5 1.5 0 01-1.5 1.5h-2.75a.75.75 0 01-.75-.75v-7.19l-2.47 2.47a.75.75 0 01-1.06 0L9 12.06v7.19a.75.75 0 01-.75.75H5.5A1.5 1.5 0 014 18.5v-13z" />
+  </svg>
+  <!-- Qwen logo -->
+  <svg v-else-if="platform === 'qwen'" :class="sizeClass" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2a10 10 0 100 20 9.96 9.96 0 006.23-2.18l2.47 1.3-.6-2.72A10 10 0 0012 2zm-4.3 6.25A1.75 1.75 0 119.45 10 1.75 1.75 0 017.7 8.25zm0 5.75a1.75 1.75 0 111.75 1.75A1.75 1.75 0 017.7 14zm7.55 2.1l-1.55-2.43H12.4l1.8 2.83c-.46.12-.93.18-1.4.18a5.7 5.7 0 010-11.4A5.7 5.7 0 0116.6 15a5.66 5.66 0 01-1.35 1.1z" />
+  </svg>
+  <!-- DeepSeek logo (abstract hex mark) -->
+  <svg v-else-if="platform === 'deepseek'" :class="sizeClass" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2.25 20 6.86v10.28L12 21.75 4 17.14V6.86L12 2.25zm0 3.08-5.33 3.07v6.24L12 17.71l5.33-3.07V8.4L12 5.33zm0 2.92a3.5 3.5 0 110 7 3.5 3.5 0 010-7z" />
+  </svg>
   <!-- Fallback: generic platform icon -->
   <svg v-else :class="sizeClass" fill="currentColor" viewBox="0 0 24 24">
     <path
@@ -29,10 +45,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { GroupPlatform } from '@/types'
 
 interface Props {
-  platform?: GroupPlatform
+  platform?: string
   size?: 'xs' | 'sm' | 'md' | 'lg'
 }
 

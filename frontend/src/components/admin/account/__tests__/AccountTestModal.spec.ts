@@ -59,17 +59,11 @@ function createStreamResponse(lines: string[]) {
   } as Response
 }
 
-function mountModal() {
+function mountModal(account: any) {
   return mount(AccountTestModal, {
     props: {
-      show: false,
-      account: {
-        id: 42,
-        name: 'Gemini Image Test',
-        platform: 'gemini',
-        type: 'apikey',
-        status: 'active'
-      }
+      show: true,
+      account
     } as any,
     global: {
       stubs: {
@@ -116,9 +110,14 @@ describe('AccountTestModal', () => {
     vi.restoreAllMocks()
   })
 
-  it('gemini 图片模型测试会携带提示词并渲染图片预览', async () => {
-    const wrapper = mountModal()
-    await wrapper.setProps({ show: true })
+  it('gemini image test sends prompt and renders preview', async () => {
+    const wrapper = mountModal({
+      id: 42,
+      name: 'Gemini Image Test',
+      platform: 'gemini',
+      type: 'apikey',
+      status: 'active'
+    })
     await flushPromises()
 
     const promptInput = wrapper.find('textarea.textarea-stub')
@@ -143,5 +142,45 @@ describe('AccountTestModal', () => {
     const preview = wrapper.find('img[alt="test-image-1"]')
     expect(preview.exists()).toBe(true)
     expect(preview.attributes('src')).toBe('data:image/png;base64,QUJD')
+  })
+
+  it('mimo account defaults to mimo-v2.5-pro when available', async () => {
+    getAvailableModels.mockResolvedValue([
+      { id: 'mimo-v2.5-pro', display_name: 'mimo-v2.5-pro' },
+      { id: 'mimo-v2.5', display_name: 'mimo-v2.5' },
+      { id: 'mimo-v2-flash', display_name: 'mimo-v2-flash' }
+    ])
+
+    const wrapper = mountModal({
+      id: 99,
+      name: 'MiMo Account',
+      platform: 'mimo',
+      type: 'apikey',
+      status: 'active'
+    })
+
+    await flushPromises()
+    expect(getAvailableModels).toHaveBeenCalledWith(99)
+    expect((wrapper.vm as any).selectedModelId).toBe('mimo-v2.5-pro')
+  })
+
+  it('qwen account prefers qwen3.6-plus over legacy qwen3.6plus', async () => {
+    getAvailableModels.mockResolvedValue([
+      { id: 'qwen3.6plus', display_name: 'qwen3.6plus' },
+      { id: 'qwen3.6-plus', display_name: 'qwen3.6-plus' },
+      { id: 'qwen3.6', display_name: 'qwen3.6' }
+    ])
+
+    const wrapper = mountModal({
+      id: 100,
+      name: 'Qwen Account',
+      platform: 'qwen',
+      type: 'apikey',
+      status: 'active'
+    })
+
+    await flushPromises()
+    expect(getAvailableModels).toHaveBeenCalledWith(100)
+    expect((wrapper.vm as any).selectedModelId).toBe('qwen3.6-plus')
   })
 })

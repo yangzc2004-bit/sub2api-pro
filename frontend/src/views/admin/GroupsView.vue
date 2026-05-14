@@ -106,6 +106,10 @@
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : value === 'antigravity'
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                      : value === 'kimi'
+                        ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400'
+                        : value === 'mimo'
+                          ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
                       : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
               ]"
             >
@@ -1190,7 +1194,7 @@
         <!-- 账号过滤控制 (OpenAI/Antigravity/Anthropic/Gemini) -->
         <div
           v-if="
-            ['openai', 'antigravity', 'anthropic', 'gemini'].includes(
+            ['openai', 'antigravity', 'anthropic', 'gemini', 'kimi', 'mimo', 'qwen', 'deepseek'].includes(
               createForm.platform,
             )
           "
@@ -2371,7 +2375,7 @@
         <!-- 账号过滤控制 (OpenAI/Antigravity/Anthropic/Gemini) -->
         <div
           v-if="
-            ['openai', 'antigravity', 'anthropic', 'gemini'].includes(
+            ['openai', 'antigravity', 'anthropic', 'gemini', 'kimi', 'mimo', 'qwen', 'deepseek'].includes(
               editForm.platform,
             )
           "
@@ -2763,6 +2767,10 @@
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                         : group.platform === 'antigravity'
                           ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                          : group.platform === 'kimi'
+                            ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400'
+                            : group.platform === 'mimo'
+                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
                           : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
                   ]"
                 >
@@ -2923,16 +2931,24 @@ const exclusiveOptions = computed(() => [
 const platformOptions = computed(() => [
   { value: "anthropic", label: "Anthropic" },
   { value: "openai", label: "OpenAI" },
+  { value: "deepseek", label: "DeepSeek" },
   { value: "gemini", label: "Gemini" },
   { value: "antigravity", label: "Antigravity" },
+  { value: "kimi", label: "Kimi" },
+  { value: "mimo", label: "MiMo" },
+  { value: "qwen", label: "Qwen" },
 ]);
 
 const platformFilterOptions = computed(() => [
   { value: "", label: t("admin.groups.allPlatforms") },
   { value: "anthropic", label: "Anthropic" },
   { value: "openai", label: "OpenAI" },
+  { value: "deepseek", label: "DeepSeek" },
   { value: "gemini", label: "Gemini" },
   { value: "antigravity", label: "Antigravity" },
+  { value: "kimi", label: "Kimi" },
+  { value: "mimo", label: "MiMo" },
+  { value: "qwen", label: "Qwen" },
 ]);
 
 const editStatusOptions = computed(() => [
@@ -3950,7 +3966,7 @@ watch(
     if (newVal !== "openai") {
       resetMessagesDispatchFormState(createForm);
     }
-    if (!["openai", "antigravity", "anthropic", "gemini"].includes(newVal)) {
+    if (!["openai", "antigravity", "anthropic", "gemini", "kimi", "mimo", "qwen", "deepseek"].includes(newVal)) {
       createForm.require_oauth_only = false;
       createForm.require_privacy_set = false;
     }
@@ -3966,7 +3982,7 @@ watch(
     if (newVal !== "openai") {
       resetMessagesDispatchFormState(editForm);
     }
-    if (!["openai", "antigravity", "anthropic", "gemini"].includes(newVal)) {
+    if (!["openai", "antigravity", "anthropic", "gemini", "kimi", "mimo", "qwen", "deepseek"].includes(newVal)) {
       editForm.require_oauth_only = false;
       editForm.require_privacy_set = false;
     }

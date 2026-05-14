@@ -39,6 +39,12 @@
                 ? 'https://api.openai.com'
                 : account.platform === 'gemini'
                   ? 'https://generativelanguage.googleapis.com'
+                  : account.platform === 'deepseek'
+                    ? 'https://api.deepseek.com'
+                  : account.platform === 'mimo'
+                    ? 'https://token-plan-cn.xiaomimimo.com/v1'
+                  : account.platform === 'qwen'
+                    ? 'https://chat.qwen.ai/api'
                   : account.platform === 'antigravity'
                     ? 'https://cloudcode-pa.googleapis.com'
                     : 'https://api.anthropic.com'
@@ -46,7 +52,17 @@
           />
           <p class="input-hint">{{ baseUrlHint }}</p>
         </div>
-        <div>
+        <div v-if="account.platform === 'mimo'">
+          <label class="input-label">MiMo Anthropic Base URL</label>
+          <input
+            v-model="editMimoAnthropicBaseUrl"
+            type="text"
+            class="input"
+            placeholder="https://token-plan-cn.xiaomimimo.com/anthropic"
+          />
+          <p class="input-hint">用于 MiMo Anthropic-compatible `/v1/messages` 转发；留空时按官方 Token Plan CN 入口处理。</p>
+        </div>
+        <div v-if="account.platform !== 'qwen'">
           <label class="input-label">{{ t('admin.accounts.apiKey') }}</label>
           <input
             v-model="editApiKey"
@@ -61,6 +77,10 @@
                 ? 'sk-proj-...'
                 : account.platform === 'gemini'
                   ? 'AIza...'
+                  : account.platform === 'deepseek'
+                    ? 'sk-...'
+                  : account.platform === 'mimo'
+                    ? 'tp-...'
                   : account.platform === 'antigravity'
                     ? 'sk-...'
                     : 'sk-ant-...'
@@ -68,6 +88,38 @@
           />
           <p class="input-hint">{{ t('admin.accounts.leaveEmptyToKeep') }}</p>
         </div>
+
+        <!-- Qwen Web Token + Cookie -->
+        <template v-if="account.platform === 'qwen'">
+          <div>
+            <label class="input-label">Auth Token (JWT)</label>
+            <input
+              v-model="editQwenAuthToken"
+              type="password"
+              class="input font-mono"
+              autocomplete="new-password"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore="true"
+              placeholder="eyJhbGciOiJIUzI1NiIs..."
+            />
+            <p class="input-hint">{{ t('admin.accounts.leaveEmptyToKeep') }}</p>
+          </div>
+          <div>
+            <label class="input-label">Cookie</label>
+            <textarea
+              v-model="editQwenCookie"
+              class="input font-mono text-xs"
+              rows="3"
+              autocomplete="new-password"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore="true"
+              placeholder="cna=...; cnaui=...; token=..."
+            />
+            <p class="input-hint">{{ t('admin.accounts.leaveEmptyToKeep') }}</p>
+          </div>
+        </template>
 
         <!-- Model Restriction Section (不适用于 Antigravity) -->
         <div v-if="account.platform !== 'antigravity'" class="border-t border-gray-200 pt-4 dark:border-dark-600">
@@ -2233,6 +2285,9 @@ const baseUrlHint = computed(() => {
   if (!props.account) return t('admin.accounts.baseUrlHint')
   if (props.account.platform === 'openai') return t('admin.accounts.openai.baseUrlHint')
   if (props.account.platform === 'gemini') return t('admin.accounts.gemini.baseUrlHint')
+  if (props.account.platform === 'deepseek') return 'DeepSeek OpenAI-compatible Base URL'
+  if (props.account.platform === 'mimo') return 'MiMo OpenAI-compatible Base URL'
+  if (props.account.platform === 'qwen') return 'Qwen Web API Base URL（默认 chat.qwen.ai）'
   return t('admin.accounts.baseUrlHint')
 })
 
@@ -2256,6 +2311,9 @@ interface TempUnschedRuleForm {
 const submitting = ref(false)
 const editBaseUrl = ref('https://api.anthropic.com')
 const editApiKey = ref('')
+const editQwenAuthToken = ref('')
+const editQwenCookie = ref('')
+const editMimoAnthropicBaseUrl = ref('https://token-plan-cn.xiaomimimo.com/anthropic')
 // Bedrock credentials
 const editBedrockAccessKeyId = ref('')
 const editBedrockSecretAccessKey = ref('')
@@ -2486,6 +2544,8 @@ const tempUnschedPresets = computed(() => [
 const defaultBaseUrl = computed(() => {
   if (props.account?.platform === 'openai') return 'https://api.openai.com'
   if (props.account?.platform === 'gemini') return 'https://generativelanguage.googleapis.com'
+  if (props.account?.platform === 'deepseek') return 'https://api.deepseek.com'
+  if (props.account?.platform === 'mimo') return 'https://token-plan-cn.xiaomimimo.com/v1'
   return 'https://api.anthropic.com'
 })
 
@@ -2709,8 +2769,29 @@ const syncFormFromAccount = (newAccount: Account | null) => {
         ? 'https://api.openai.com'
         : newAccount.platform === 'gemini'
           ? 'https://generativelanguage.googleapis.com'
+          : newAccount.platform === 'deepseek'
+            ? 'https://api.deepseek.com'
+          : newAccount.platform === 'mimo'
+            ? 'https://token-plan-cn.xiaomimimo.com/v1'
+          : newAccount.platform === 'qwen'
+            ? 'https://chat.qwen.ai/api'
           : 'https://api.anthropic.com'
-    editBaseUrl.value = (credentials.base_url as string) || platformDefaultUrl
+    editBaseUrl.value =
+      (newAccount.platform === 'mimo'
+        ? ((credentials.mimo_openai_base_url as string) || (credentials.base_url as string))
+        : (credentials.base_url as string)) || platformDefaultUrl
+    if (newAccount.platform === 'mimo') {
+      editMimoAnthropicBaseUrl.value =
+        (credentials.mimo_anthropic_base_url as string) ||
+        (credentials.anthropic_base_url as string) ||
+        'https://token-plan-cn.xiaomimimo.com/anthropic'
+    } else {
+      editMimoAnthropicBaseUrl.value = 'https://token-plan-cn.xiaomimimo.com/anthropic'
+    }
+    if (newAccount.platform === 'qwen') {
+      editQwenAuthToken.value = (credentials.auth_token as string) || ''
+      editQwenCookie.value = (credentials.cookie as string) || ''
+    }
 
     // Load model mappings and detect mode
     const existingMappings = credentials.model_mapping as Record<string, string> | undefined
@@ -2832,8 +2913,13 @@ const syncFormFromAccount = (newAccount: Account | null) => {
         ? 'https://api.openai.com'
         : newAccount.platform === 'gemini'
           ? 'https://generativelanguage.googleapis.com'
+          : newAccount.platform === 'mimo'
+            ? 'https://token-plan-cn.xiaomimimo.com/v1'
+          : newAccount.platform === 'qwen'
+            ? 'https://chat.qwen.ai/api'
           : 'https://api.anthropic.com'
     editBaseUrl.value = platformDefaultUrl
+    editMimoAnthropicBaseUrl.value = 'https://token-plan-cn.xiaomimimo.com/anthropic'
 
     // Load model mappings for OpenAI OAuth accounts
     if (newAccount.platform === 'openai' && newAccount.credentials) {
@@ -3341,17 +3427,43 @@ const handleSubmit = async () => {
         ...currentCredentials,
         base_url: newBaseUrl
       }
+      if (props.account.platform === 'mimo') {
+        newCredentials.mimo_openai_base_url = newBaseUrl
+        newCredentials.mimo_anthropic_base_url = editMimoAnthropicBaseUrl.value.trim() || 'https://token-plan-cn.xiaomimimo.com/anthropic'
+      }
 
-      // Handle API key
-      if (editApiKey.value.trim()) {
-        // User provided a new API key
-        newCredentials.api_key = editApiKey.value.trim()
-      } else if (currentCredentials.api_key) {
-        // Preserve existing api_key
-        newCredentials.api_key = currentCredentials.api_key
+      // Handle API key / Qwen auth token
+      if (props.account.platform === 'qwen') {
+        if (editQwenAuthToken.value.trim()) {
+          newCredentials.auth_token = editQwenAuthToken.value.trim()
+        } else if (currentCredentials.auth_token) {
+          newCredentials.auth_token = currentCredentials.auth_token
+        } else {
+          appStore.showError('Qwen auth_token is required')
+          return
+        }
+        const cookie = editQwenCookie.value.trim()
+        if (cookie) {
+          newCredentials.cookie = cookie
+        } else if (currentCredentials.cookie) {
+          newCredentials.cookie = currentCredentials.cookie
+        } else {
+          delete newCredentials.cookie
+        }
+        delete newCredentials.api_key
       } else {
-        appStore.showError(t('admin.accounts.apiKeyIsRequired'))
-        return
+        if (editApiKey.value.trim()) {
+          // User provided a new API key
+          newCredentials.api_key = editApiKey.value.trim()
+        } else if (currentCredentials.api_key) {
+          // Preserve existing api_key
+          newCredentials.api_key = currentCredentials.api_key
+        } else {
+          appStore.showError(t('admin.accounts.apiKeyIsRequired'))
+          return
+        }
+        delete newCredentials.auth_token
+        delete newCredentials.cookie
       }
 
       // Add model mapping if configured（OpenAI 开启自动透传时保留现有映射，不再编辑）

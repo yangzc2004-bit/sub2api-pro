@@ -40,6 +40,15 @@ func RegisterGatewayRoutes(
 	gateway.Use(gin.HandlerFunc(apiKeyAuth))
 	gateway.Use(requireGroupAnthropic)
 	{
+		writePlatformNotSupported := func(c *gin.Context, message string) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"type": "error",
+				"error": gin.H{
+					"type":    "not_found_error",
+					"message": message,
+				},
+			})
+		}
 		// /v1/messages: auto-route based on group platform
 		gateway.POST("/messages", func(c *gin.Context) {
 			if getGroupPlatform(c) == service.PlatformOpenAI {
@@ -50,14 +59,9 @@ func RegisterGatewayRoutes(
 		})
 		// /v1/messages/count_tokens: OpenAI groups get 404
 		gateway.POST("/messages/count_tokens", func(c *gin.Context) {
-			if getGroupPlatform(c) == service.PlatformOpenAI {
-				c.JSON(http.StatusNotFound, gin.H{
-					"type": "error",
-					"error": gin.H{
-						"type":    "not_found_error",
-						"message": "Token counting is not supported for this platform",
-					},
-				})
+			platform := getGroupPlatform(c)
+			if platform == service.PlatformOpenAI || platform == service.PlatformMimo || platform == service.PlatformQwen {
+				writePlatformNotSupported(c, "Token counting is not supported for this platform")
 				return
 			}
 			h.Gateway.CountTokens(c)
@@ -66,15 +70,25 @@ func RegisterGatewayRoutes(
 		gateway.GET("/usage", h.Gateway.Usage)
 		// OpenAI Responses API: auto-route based on group platform
 		gateway.POST("/responses", func(c *gin.Context) {
-			if getGroupPlatform(c) == service.PlatformOpenAI {
+			platform := getGroupPlatform(c)
+			if platform == service.PlatformOpenAI {
 				h.OpenAIGateway.Responses(c)
+				return
+			}
+			if platform == service.PlatformMimo || platform == service.PlatformQwen {
+				writePlatformNotSupported(c, "Responses API is not supported for this platform")
 				return
 			}
 			h.Gateway.Responses(c)
 		})
 		gateway.POST("/responses/*subpath", func(c *gin.Context) {
-			if getGroupPlatform(c) == service.PlatformOpenAI {
+			platform := getGroupPlatform(c)
+			if platform == service.PlatformOpenAI {
 				h.OpenAIGateway.Responses(c)
+				return
+			}
+			if platform == service.PlatformMimo || platform == service.PlatformQwen {
+				writePlatformNotSupported(c, "Responses API is not supported for this platform")
 				return
 			}
 			h.Gateway.Responses(c)
@@ -131,8 +145,19 @@ func RegisterGatewayRoutes(
 
 	// OpenAI Responses API（不带v1前缀的别名）— auto-route based on group platform
 	responsesHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformOpenAI {
+		platform := getGroupPlatform(c)
+		if platform == service.PlatformOpenAI {
 			h.OpenAIGateway.Responses(c)
+			return
+		}
+		if platform == service.PlatformMimo || platform == service.PlatformQwen {
+			c.JSON(http.StatusNotFound, gin.H{
+				"type": "error",
+				"error": gin.H{
+					"type":    "not_found_error",
+					"message": "Responses API is not supported for this platform",
+				},
+			})
 			return
 		}
 		h.Gateway.Responses(c)

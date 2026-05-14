@@ -48,7 +48,13 @@ func NewTokenRefreshService(
 	schedulerCache SchedulerCache,
 	cfg *config.Config,
 	tempUnschedCache TempUnschedCache,
+	kimiOAuthServices ...*KimiOAuthService,
 ) *TokenRefreshService {
+	var kimiOAuthService *KimiOAuthService
+	if len(kimiOAuthServices) > 0 {
+		kimiOAuthService = kimiOAuthServices[0]
+	}
+
 	s := &TokenRefreshService{
 		accountRepo:      accountRepo,
 		refreshPolicy:    DefaultBackgroundRefreshPolicy(),
@@ -64,6 +70,7 @@ func NewTokenRefreshService(
 	claudeRefresher := NewClaudeTokenRefresher(oauthService)
 	geminiRefresher := NewGeminiTokenRefresher(geminiOAuthService)
 	agRefresher := NewAntigravityTokenRefresher(antigravityOAuthService)
+	kimiRefresher := NewKimiTokenRefresher(kimiOAuthService)
 
 	// 注册平台特定的刷新器（TokenRefresher 接口）
 	s.refreshers = []TokenRefresher{
@@ -71,6 +78,7 @@ func NewTokenRefreshService(
 		openAIRefresher,
 		geminiRefresher,
 		agRefresher,
+		kimiRefresher,
 	}
 
 	// 注册对应的 OAuthRefreshExecutor（带 CacheKey 方法）
@@ -79,6 +87,7 @@ func NewTokenRefreshService(
 		openAIRefresher,
 		geminiRefresher,
 		agRefresher,
+		kimiRefresher,
 	}
 
 	return s

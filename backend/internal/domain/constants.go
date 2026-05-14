@@ -22,6 +22,10 @@ const (
 	PlatformOpenAI      = "openai"
 	PlatformGemini      = "gemini"
 	PlatformAntigravity = "antigravity"
+	PlatformKimi        = "kimi"
+	PlatformMimo        = "mimo"
+	PlatformQwen        = "qwen"
+	PlatformDeepSeek    = "deepseek"
 )
 
 // Account type constants
@@ -139,4 +143,72 @@ var DefaultBedrockModelMapping = map[string]string{
 	// Claude Haiku
 	"claude-haiku-4-5":          "us.anthropic.claude-haiku-4-5-20251001-v1:0",
 	"claude-haiku-4-5-20251001": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+}
+
+// DefaultKimiModelMapping maps public Kimi Code model aliases to the
+// OpenAI-compatible model accepted by Kimi Code.
+var DefaultKimiModelMapping = map[string]string{
+	"kimi-for-coding":           "kimi-for-coding",
+	"kimi-k2.6":                 "kimi-for-coding",
+	"kimi-k2.6-thinking":        "kimi-for-coding",
+	"kimi-k2.6-search":          "kimi-for-coding",
+	"kimi-k2.6-thinking-search": "kimi-for-coding",
+	"kimi-k2.6-vision":          "kimi-for-coding",
+	"kimi-k2.6-vision-thinking": "kimi-for-coding",
+	"kimi-k2.6-vision-search":   "kimi-for-coding",
+	"kimi-k2.6-full":            "kimi-for-coding",
+	"kimi-k2.6-multimodal":      "kimi-for-coding",
+	"kimi-k2.6-tools":           "kimi-for-coding",
+	"kimi-k2.6-tools-search":    "kimi-for-coding",
+}
+
+// MiMo Token Plan defaults. MiMo supports both OpenAI-compatible and
+// Anthropic-compatible APIs, so every public model is passed through unchanged.
+const (
+	MimoDefaultModel            = "mimo-v2.5-pro"
+	MimoDefaultOpenAIBaseURL    = "https://token-plan-cn.xiaomimimo.com/v1"
+	MimoDefaultAnthropicBaseURL = "https://token-plan-cn.xiaomimimo.com/anthropic"
+	MimoRegionCN                = "cn"
+	MimoRegionSGP               = "sgp"
+	MimoRegionAMS               = "ams"
+)
+
+var DefaultMimoModelMapping = map[string]string{
+	"mimo-v2.5-pro":             "mimo-v2.5-pro",
+	"mimo-v2.5":                 "mimo-v2.5",
+	"mimo-v2-pro":               "mimo-v2-pro",
+	"mimo-v2-omni":              "mimo-v2-omni",
+	"mimo-v2-flash":             "mimo-v2-flash",
+	"mimo-v2.5-tts":             "mimo-v2.5-tts",
+	"mimo-v2.5-tts-voicedesign": "mimo-v2.5-tts-voicedesign",
+	"mimo-v2.5-tts-voiceclone":  "mimo-v2.5-tts-voiceclone",
+}
+
+const (
+	QwenDefaultModel              = "qwen3.6-plus"
+	QwenDefaultChatCompletionsURL = "https://chat.qwen.ai/api"
+)
+
+// DefaultQwenModelMapping 映射 Qwen 网页版支持的模型。
+// 模型 ID 以 chat.qwen.ai 网页版实际支持的为准，可通过 account model_mapping 覆盖。
+var DefaultQwenModelMapping = map[string]string{
+	"qwen3.6-plus":      "qwen3.6-plus",
+	"qwen3.6plus":       "qwen3.6-plus",
+	"qwen3.6":           "qwen3.6",
+	"qwen3-coder-plus":  "qwen3-coder-plus",
+	"qwen3-coder":       "qwen3-coder",
+	"qwen3-coder-flash": "qwen3-coder-flash",
+	"qwq-plus":          "qwq-plus",
+	"qwen3.5-vl-plus":   "qwen3.5-vl-plus",
+}
+
+const (
+	DeepSeekDefaultModel            = "deepseek-v4-flash"
+	DeepSeekDefaultOpenAIBaseURL    = "https://api.deepseek.com"
+	DeepSeekDefaultAnthropicBaseURL = "https://api.deepseek.com/anthropic"
+)
+
+var DefaultDeepSeekModelMapping = map[string]string{
+	"deepseek-v4-flash": "deepseek-v4-flash",
+	"deepseek-v4-pro":   "deepseek-v4-pro",
 }

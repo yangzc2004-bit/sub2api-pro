@@ -64,6 +64,10 @@ type AnthropicContentBlock struct {
 	// type=image
 	Source *AnthropicImageSource `json:"source,omitempty"`
 
+	// type=document
+	Title    string `json:"title,omitempty"`
+	Filename string `json:"filename,omitempty"`
+
 	// type=tool_use
 	ID    string          `json:"id,omitempty"`
 	Name  string          `json:"name,omitempty"`

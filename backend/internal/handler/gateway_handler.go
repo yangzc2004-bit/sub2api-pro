@@ -753,6 +753,17 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			writerSizeBeforeForward := c.Writer.Size()
 			if account.Platform == service.PlatformAntigravity && account.Type != service.AccountTypeAPIKey {
 				result, err = h.antigravityGatewayService.Forward(requestCtx, c, account, body, hasBoundSession)
+			} else if account.Platform == service.PlatformMimo {
+				result, err = h.gatewayService.ForwardMimoMessages(requestCtx, c, account, body, parsedReq)
+			} else if account.Platform == service.PlatformQwen {
+				// Qwen 平台：将 Anthropic 格式转换为 OpenAI Chat Completions 格式
+				chatCompletionsBody, convErr := service.ConvertAnthropicToChatCompletions(body)
+				if convErr != nil {
+					reqLog.Error("gateway.qwen_anthropic_conversion_failed", zap.Error(convErr))
+					h.handleStreamingAwareError(c, http.StatusBadRequest, "invalid_request_error", "Failed to convert Anthropic request to OpenAI format", streamStarted)
+					return
+				}
+				result, err = h.gatewayService.ForwardQwenChatCompletions(requestCtx, c, account, chatCompletionsBody)
 			} else {
 				result, err = h.gatewayService.Forward(requestCtx, c, account, parsedReq)
 			}
@@ -972,6 +983,38 @@ func (h *GatewayHandler) Models(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"object": "list",
 			"data":   openai.DefaultModels,
+		})
+		return
+	}
+	if platform == service.PlatformQwen {
+		c.JSON(http.StatusOK, gin.H{
+			"object": "list",
+			"data": []openai.Model{
+				{ID: "qwen3.6-plus", Object: "model", Type: "model", DisplayName: "qwen3.6-plus", OwnedBy: "alibaba-qwen"},
+				{ID: "qwen3.6plus", Object: "model", Type: "model", DisplayName: "qwen3.6plus", OwnedBy: "alibaba-qwen"},
+				{ID: "qwen3.6", Object: "model", Type: "model", DisplayName: "qwen3.6", OwnedBy: "alibaba-qwen"},
+				{ID: "qwen3-coder-plus", Object: "model", Type: "model", DisplayName: "qwen3-coder-plus", OwnedBy: "alibaba-qwen"},
+				{ID: "qwen3-coder", Object: "model", Type: "model", DisplayName: "qwen3-coder", OwnedBy: "alibaba-qwen"},
+				{ID: "qwen3-coder-flash", Object: "model", Type: "model", DisplayName: "qwen3-coder-flash", OwnedBy: "alibaba-qwen"},
+				{ID: "qwq-plus", Object: "model", Type: "model", DisplayName: "qwq-plus", OwnedBy: "alibaba-qwen"},
+				{ID: "qwen3.5-vl-plus", Object: "model", Type: "model", DisplayName: "qwen3.5-vl-plus", OwnedBy: "alibaba-qwen"},
+			},
+		})
+		return
+	}
+	if platform == service.PlatformMimo {
+		c.JSON(http.StatusOK, gin.H{
+			"object": "list",
+			"data": []openai.Model{
+				{ID: "mimo-v2.5-pro", Object: "model", Type: "model", DisplayName: "mimo-v2.5-pro", OwnedBy: "xiaomi-mimo"},
+				{ID: "mimo-v2.5", Object: "model", Type: "model", DisplayName: "mimo-v2.5", OwnedBy: "xiaomi-mimo"},
+				{ID: "mimo-v2-pro", Object: "model", Type: "model", DisplayName: "mimo-v2-pro", OwnedBy: "xiaomi-mimo"},
+				{ID: "mimo-v2-omni", Object: "model", Type: "model", DisplayName: "mimo-v2-omni", OwnedBy: "xiaomi-mimo"},
+				{ID: "mimo-v2-flash", Object: "model", Type: "model", DisplayName: "mimo-v2-flash", OwnedBy: "xiaomi-mimo"},
+				{ID: "mimo-v2.5-tts", Object: "model", Type: "model", DisplayName: "mimo-v2.5-tts", OwnedBy: "xiaomi-mimo"},
+				{ID: "mimo-v2.5-tts-voicedesign", Object: "model", Type: "model", DisplayName: "mimo-v2.5-tts-voicedesign", OwnedBy: "xiaomi-mimo"},
+				{ID: "mimo-v2.5-tts-voiceclone", Object: "model", Type: "model", DisplayName: "mimo-v2.5-tts-voiceclone", OwnedBy: "xiaomi-mimo"},
+			},
 		})
 		return
 	}

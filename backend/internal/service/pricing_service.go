@@ -50,6 +50,22 @@ var (
 		Mode:                    "chat",
 		SupportsPromptCaching:   true,
 	}
+	kimiK26FallbackPricing = &LiteLLMModelPricing{
+		InputCostPerToken:       6e-06,  // $6.00 per MTok
+		OutputCostPerToken:      2.4e-5, // $24.00 per MTok
+		CacheReadInputTokenCost: 8e-07,  // $0.80 per MTok
+		LiteLLMProvider:         "kimi",
+		Mode:                    "chat",
+		SupportsPromptCaching:   true,
+	}
+	mimoFallbackPricing = &LiteLLMModelPricing{
+		InputCostPerToken:       0,
+		OutputCostPerToken:      0,
+		CacheReadInputTokenCost: 0,
+		LiteLLMProvider:         "mimo",
+		Mode:                    "chat",
+		SupportsPromptCaching:   true,
+	}
 )
 
 // LiteLLMModelPricing LiteLLM价格数据结构
@@ -533,6 +549,12 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 	// 标准化模型名称（同时兼容 "models/xxx"、VertexAI 资源名等前缀）
 	modelLower := strings.ToLower(strings.TrimSpace(modelName))
 	lookupCandidates := s.buildModelLookupCandidates(modelLower)
+	if isKimiPricingModel(lookupCandidates[0]) {
+		return kimiK26FallbackPricing
+	}
+	if strings.HasPrefix(lookupCandidates[0], "mimo-") {
+		return mimoFallbackPricing
+	}
 
 	// 1. 精确匹配
 	for _, candidate := range lookupCandidates {
@@ -605,6 +627,13 @@ func (s *PricingService) buildModelLookupCandidates(modelLower string) []string 
 		return []string{modelLower}
 	}
 	return out
+}
+
+func isKimiPricingModel(model string) bool {
+	model = strings.ToLower(strings.TrimSpace(model))
+	return strings.HasPrefix(model, "kimi-") ||
+		strings.HasPrefix(model, "moonshot-") ||
+		model == "kimi-for-coding"
 }
 
 func normalizeModelNameForPricing(model string) string {

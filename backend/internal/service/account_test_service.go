@@ -18,13 +18,16 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/kimi"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tidwall/gjson"
 )
 
 // sseDataPrefix matches SSE data lines with optional whitespace after colon.
@@ -190,6 +193,18 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 
 	if account.Platform == PlatformAntigravity {
 		return s.routeAntigravityTest(c, account, modelID, prompt)
+	}
+
+	if account.IsKimi() {
+		return s.testKimiAccountConnection(c, account, modelID, prompt)
+	}
+
+	if account.IsMimo() {
+		return s.testMimoAccountConnection(c, account, modelID, prompt)
+	}
+
+	if account.IsQwen() {
+		return s.testQwenAccountConnection(c, account, modelID, prompt)
 	}
 
 	return s.testClaudeAccountConnection(c, account, modelID)
@@ -494,7 +509,6 @@ func (s *AccountTestService) testBedrockAccountConnection(c *gin.Context, ctx co
 // testOpenAIAccountConnection tests an OpenAI account's connection
 func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account *Account, modelID string, prompt string, mode string) error {
 	ctx := c.Request.Context()
-	_ = prompt
 	mode = normalizeAccountTestMode(mode)
 
 	// Default to openai.DefaultTestModel for OpenAI testing
@@ -509,6 +523,9 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 	if mode == AccountTestModeCompact {
 		testModelID = resolveOpenAICompactForwardModel(account, testModelID)
 		return s.testOpenAICompactConnection(c, account, testModelID)
+	}
+	if account.Platform == PlatformDeepSeek && account.Type == AccountTypeAPIKey {
+		return s.testOpenAIAPIKeyChatCompletionsConnection(c, account, testModelID, prompt)
 	}
 
 	// Route to image generation test if an image model is selected
@@ -635,6 +652,63 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 
 	// Process SSE stream
 	return s.processOpenAIStream(c, resp.Body)
+}
+
+func (s *AccountTestService) testOpenAIAPIKeyChatCompletionsConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
+	ctx := c.Request.Context()
+
+	authToken := account.GetOpenAIApiKey()
+	if strings.TrimSpace(authToken) == "" {
+		return s.sendErrorAndEnd(c, "No API key available")
+	}
+
+	baseURL := account.GetOpenAIBaseURL()
+	if baseURL == "" {
+		baseURL = "https://api.openai.com"
+	}
+	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid base URL: %s", err.Error()))
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	payloadBytes, _ := json.Marshal(createOpenAIChatCompletionsTestPayload(modelID, prompt))
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: modelID})
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, buildOpenAIChatCompletionsURL(normalizedBaseURL), bytes.NewReader(payloadBytes))
+	if err != nil {
+		return s.sendErrorAndEnd(c, "Failed to create request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
+			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
+		}
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+	}
+
+	return s.processKimiChatCompletionsStream(c, resp.Body)
 }
 
 // testOpenAICompactConnection probes /responses/compact and persists the
@@ -858,8 +932,276 @@ func (s *AccountTestService) testGeminiAccountConnection(c *gin.Context, account
 	return s.processGeminiStream(c, resp.Body)
 }
 
+func (s *AccountTestService) testKimiAccountConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
+	ctx := c.Request.Context()
+
+	testModelID := strings.TrimSpace(modelID)
+	if testModelID == "" {
+		testModelID = kimi.DefaultTestModel
+	}
+	upstreamModelID := account.GetMappedModel(testModelID)
+
+	token := strings.TrimSpace(account.GetCredential("access_token"))
+	if token == "" {
+		return s.sendErrorAndEnd(c, "No access token available")
+	}
+
+	baseURL, err := s.validateUpstreamBaseURL(account.GetKimiBaseURL())
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid base URL: %s", err.Error()))
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	payloadBytes, _ := json.Marshal(createKimiTestPayload(upstreamModelID, prompt))
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, buildOpenAIChatCompletionsURL(baseURL), bytes.NewReader(payloadBytes))
+	if err != nil {
+		return s.sendErrorAndEnd(c, "Failed to create request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Authorization", "Bearer "+token)
+	kimi.ApplyCodingAgentHeaders(req.Header, "")
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
+			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
+		}
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+	}
+
+	return s.processKimiChatCompletionsStream(c, resp.Body)
+}
+
 // routeAntigravityTest 路由 Antigravity 账号的测试请求。
 // APIKey 类型走原生协议（与 gateway_handler 路由一致），OAuth/Upstream 走 CRS 中转。
+func (s *AccountTestService) testMimoAccountConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
+	ctx := c.Request.Context()
+
+	testModelID := strings.TrimSpace(modelID)
+	if testModelID == "" {
+		testModelID = "mimo-v2.5-pro"
+	}
+	upstreamModelID := account.GetMappedModel(testModelID)
+
+	apiKey := account.GetMimoAPIKey()
+	if apiKey == "" {
+		return s.sendErrorAndEnd(c, "No MiMo Token Plan API key available")
+	}
+
+	baseURL, err := s.validateUpstreamBaseURL(account.GetMimoOpenAIBaseURL())
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid MiMo OpenAI base URL: %s", err.Error()))
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	payloadBytes, _ := json.Marshal(createMimoTestPayload(upstreamModelID, prompt))
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, buildOpenAIChatCompletionsURL(baseURL), bytes.NewReader(payloadBytes))
+	if err != nil {
+		return s.sendErrorAndEnd(c, "Failed to create request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("api-key", apiKey)
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
+			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
+		}
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+	}
+
+	return s.processKimiChatCompletionsStream(c, resp.Body)
+}
+
+func (s *AccountTestService) testQwenAccountConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
+	ctx := c.Request.Context()
+
+	testModelID := strings.TrimSpace(modelID)
+	if testModelID == "" {
+		testModelID = domain.QwenDefaultModel
+	}
+	upstreamModelID := normalizeQwenWebModel(account.GetMappedModel(testModelID))
+
+	authToken := account.GetQwenAuthToken()
+	if authToken == "" {
+		return s.sendErrorAndEnd(c, "No Qwen auth_token available")
+	}
+	cookie := account.GetQwenCookie()
+
+	baseURL, err := s.validateUpstreamBaseURL(account.GetQwenBaseURL())
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid Qwen base URL: %s", err.Error()))
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
+
+	midtoken, err := s.fetchQwenTestMidtoken(ctx, account)
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to fetch Qwen bx-umidtoken: %s", err.Error()))
+	}
+	chatID, chatCookies, err := s.createQwenTestChat(ctx, c, account, baseURL, authToken, cookie, midtoken, upstreamModelID)
+	if err != nil {
+		return err
+	}
+
+	textPrompt := strings.TrimSpace(prompt)
+	if textPrompt == "" {
+		textPrompt = defaultGeminiTextTestPrompt
+	}
+	payloadBytes, err := buildQwenChatCompletionsBody(chatID, upstreamModelID, textPrompt, true)
+	if err != nil {
+		return s.sendErrorAndEnd(c, "Failed to build Qwen request")
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, buildQwenAPIURL(baseURL, "/v2/chat/completions")+"?chat_id="+chatID, bytes.NewReader(payloadBytes))
+	if err != nil {
+		return s.sendErrorAndEnd(c, "Failed to create request")
+	}
+	setQwenWebHeaders(req, authToken, mergeQwenCookies(cookie, chatCookies), midtoken, account.GetCredential("bx_ua"))
+	req.Header.Set("Accept", "text/event-stream")
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
+			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
+		}
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+	}
+
+	return s.processQwenChatCompletionsStream(c, resp.Body)
+}
+
+func (s *AccountTestService) fetchQwenTestMidtoken(ctx context.Context, account *Account) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://sg-wum.alibaba.com/w/wu.json", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", qwenDefaultUserAgent())
+	req.Header.Set("Accept", "*/*")
+
+	resp, err := s.doQwenTestUpstream(ctx, account, req)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+		return "", fmt.Errorf("API returned %d: %s", resp.StatusCode, string(body))
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return "", err
+	}
+	match := qwenMidtokenPattern.FindSubmatch(body)
+	if len(match) < 2 {
+		return "", fmt.Errorf("failed to extract bx-umidtoken")
+	}
+	return string(match[1]), nil
+}
+
+func (s *AccountTestService) createQwenTestChat(ctx context.Context, c *gin.Context, account *Account, baseURL, authToken, cookie, midtoken, model string) (string, []*http.Cookie, error) {
+	payload := map[string]any{
+		"title":     "New Chat",
+		"models":    []string{model},
+		"chat_mode": "normal",
+		"chat_type": "t2t",
+		"timestamp": time.Now().UnixMilli(),
+	}
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return "", nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, buildQwenAPIURL(baseURL, "/v2/chats/new"), bytes.NewReader(payloadBytes))
+	if err != nil {
+		return "", nil, err
+	}
+	setQwenWebHeaders(req, authToken, cookie, midtoken, account.GetCredential("bx_ua"))
+
+	resp, err := s.doQwenTestUpstream(ctx, account, req)
+	if err != nil {
+		return "", nil, s.sendErrorAndEnd(c, fmt.Sprintf("Request failed: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(respBody))
+			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
+		}
+		return "", nil, s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(respBody)))
+	}
+	chatID := strings.TrimSpace(gjson.GetBytes(respBody, "data.id").String())
+	if chatID == "" || !gjson.GetBytes(respBody, "success").Bool() {
+		return "", nil, s.sendErrorAndEnd(c, fmt.Sprintf("Failed to create Qwen chat: %s", string(respBody)))
+	}
+	return chatID, resp.Cookies(), nil
+}
+
+func (s *AccountTestService) doQwenTestUpstream(ctx context.Context, account *Account, req *http.Request) (*http.Response, error) {
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+	return s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+}
+
 func (s *AccountTestService) routeAntigravityTest(c *gin.Context, account *Account, modelID string, prompt string) error {
 	if account.Type == AccountTypeAPIKey {
 		if strings.HasPrefix(modelID, "gemini-") {
@@ -1083,6 +1425,38 @@ func createGeminiTestPayload(modelID string, prompt string) []byte {
 	}
 	bytes, _ := json.Marshal(payload)
 	return bytes
+}
+
+func createKimiTestPayload(modelID string, prompt string) map[string]any {
+	textPrompt := strings.TrimSpace(prompt)
+	if textPrompt == "" {
+		textPrompt = defaultGeminiTextTestPrompt
+	}
+	return map[string]any{
+		"model": modelID,
+		"messages": []map[string]any{
+			{
+				"role":    "user",
+				"content": textPrompt,
+			},
+		},
+		"max_tokens": 128,
+		"stream":     true,
+		"stream_options": map[string]any{
+			"include_usage": true,
+		},
+	}
+}
+
+func createOpenAIChatCompletionsTestPayload(modelID string, prompt string) map[string]any {
+	return createKimiTestPayload(modelID, prompt)
+}
+
+func createMimoTestPayload(modelID string, prompt string) map[string]any {
+	payload := createKimiTestPayload(modelID, prompt)
+	payload["max_completion_tokens"] = payload["max_tokens"]
+	delete(payload, "max_tokens")
+	return payload
 }
 
 // processGeminiStream processes SSE stream from Gemini API
@@ -1317,6 +1691,129 @@ func (s *AccountTestService) processOpenAIStream(c *gin.Context, body io.Reader)
 			return s.sendErrorAndEnd(c, errorMsg)
 		}
 	}
+}
+
+func (s *AccountTestService) processKimiChatCompletionsStream(c *gin.Context, body io.Reader) error {
+	reader := bufio.NewReader(body)
+
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				s.sendEvent(c, TestEvent{Type: "test_complete", Success: true})
+				return nil
+			}
+			return s.sendErrorAndEnd(c, fmt.Sprintf("Stream read error: %s", err.Error()))
+		}
+
+		line = strings.TrimSpace(line)
+		if line == "" || !sseDataPrefix.MatchString(line) {
+			continue
+		}
+
+		jsonStr := sseDataPrefix.ReplaceAllString(line, "")
+		if jsonStr == "[DONE]" {
+			s.sendEvent(c, TestEvent{Type: "test_complete", Success: true})
+			return nil
+		}
+
+		var data map[string]any
+		if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
+			continue
+		}
+		if errData, ok := data["error"].(map[string]any); ok {
+			errorMsg := "Unknown error"
+			if msg, ok := errData["message"].(string); ok && msg != "" {
+				errorMsg = msg
+			}
+			return s.sendErrorAndEnd(c, errorMsg)
+		}
+
+		choices, _ := data["choices"].([]any)
+		for _, choice := range choices {
+			choiceMap, _ := choice.(map[string]any)
+			delta, _ := choiceMap["delta"].(map[string]any)
+			if text, ok := delta["content"].(string); ok && text != "" {
+				s.sendEvent(c, TestEvent{Type: "content", Text: text})
+			}
+			if text, ok := delta["reasoning_content"].(string); ok && text != "" {
+				s.sendEvent(c, TestEvent{Type: "content", Text: text})
+			}
+			if finishReason, ok := choiceMap["finish_reason"].(string); ok && finishReason != "" {
+				s.sendEvent(c, TestEvent{Type: "test_complete", Success: true})
+				return nil
+			}
+		}
+	}
+}
+
+func (s *AccountTestService) processQwenChatCompletionsStream(c *gin.Context, body io.Reader) error {
+	reader := bufio.NewReader(body)
+	sawPayload := false
+	sawContent := false
+	lastPayload := ""
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				if !sawContent {
+					return s.sendErrorAndEnd(c, qwenEmptyTestStreamMessage(sawPayload, lastPayload))
+				}
+				s.sendEvent(c, TestEvent{Type: "test_complete", Success: true})
+				return nil
+			}
+			return s.sendErrorAndEnd(c, fmt.Sprintf("Stream read error: %s", err.Error()))
+		}
+
+		line = strings.TrimSpace(line)
+		if line == "" || !sseDataPrefix.MatchString(line) {
+			continue
+		}
+
+		jsonStr := strings.TrimSpace(sseDataPrefix.ReplaceAllString(line, ""))
+		if jsonStr == "[DONE]" {
+			if !sawContent {
+				return s.sendErrorAndEnd(c, qwenEmptyTestStreamMessage(sawPayload, lastPayload))
+			}
+			s.sendEvent(c, TestEvent{Type: "test_complete", Success: true})
+			return nil
+		}
+		if !gjson.Valid(jsonStr) {
+			continue
+		}
+		sawPayload = true
+		lastPayload = jsonStr
+		if errMsg := strings.TrimSpace(gjson.Get(jsonStr, "error.message").String()); errMsg != "" {
+			return s.sendErrorAndEnd(c, errMsg)
+		}
+
+		for _, chunk := range qwenSSEPayloadToOpenAIChunks(jsonStr, domain.QwenDefaultModel) {
+			for _, choice := range chunk.Choices {
+				if choice.Delta.Content != nil && strings.TrimSpace(*choice.Delta.Content) != "" {
+					sawContent = true
+					s.sendEvent(c, TestEvent{Type: "content", Text: *choice.Delta.Content})
+				}
+				if choice.FinishReason != nil && strings.TrimSpace(*choice.FinishReason) != "" {
+					if !sawContent {
+						return s.sendErrorAndEnd(c, qwenEmptyTestStreamMessage(sawPayload, lastPayload))
+					}
+					s.sendEvent(c, TestEvent{Type: "test_complete", Success: true})
+					return nil
+				}
+			}
+		}
+	}
+}
+
+func qwenEmptyTestStreamMessage(sawPayload bool, lastPayload string) string {
+	if !sawPayload {
+		return "Qwen upstream stream ended before any JSON payload"
+	}
+	detail := sanitizeUpstreamErrorMessage(strings.TrimSpace(lastPayload))
+	if detail == "" {
+		return "Qwen upstream stream ended without text content"
+	}
+	return "Qwen upstream stream ended without text content; last payload: " + truncateString(detail, 512)
 }
 
 // testOpenAIImageAPIKey tests OpenAI image generation using an API Key account.

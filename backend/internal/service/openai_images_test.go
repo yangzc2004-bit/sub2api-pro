@@ -413,6 +413,17 @@ func TestAccountSupportsOpenAIImageCapability_OAuthSupportsNative(t *testing.T) 
 	require.True(t, account.SupportsOpenAIImageCapability(OpenAIImagesCapabilityNative))
 }
 
+func TestAccountSupportsOpenAIImageCapability_DeepSeekChatDoesNotRequireImages(t *testing.T) {
+	account := &Account{
+		Platform: PlatformDeepSeek,
+		Type:     AccountTypeAPIKey,
+	}
+
+	require.True(t, account.SupportsOpenAIImageCapability(""))
+	require.False(t, account.SupportsOpenAIImageCapability(OpenAIImagesCapabilityBasic))
+	require.False(t, account.SupportsOpenAIImageCapability(OpenAIImagesCapabilityNative))
+}
+
 func TestBuildOpenAIImagesURL_HandlesVersionedBaseURL(t *testing.T) {
 	require.Equal(t,
 		"https://image-upstream.example/v1/images/generations",

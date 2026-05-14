@@ -219,7 +219,16 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 		if channelMapping.Mapped {
 			forwardBody = h.gatewayService.ReplaceModelInBody(body, channelMapping.MappedModel)
 		}
-		result, err := h.gatewayService.ForwardAsChatCompletions(c.Request.Context(), c, account, forwardBody, parsedReq)
+		var result *service.ForwardResult
+		if account.Platform == service.PlatformKimi {
+			result, err = h.gatewayService.ForwardKimiChatCompletions(c.Request.Context(), c, account, forwardBody)
+		} else if account.Platform == service.PlatformMimo {
+			result, err = h.gatewayService.ForwardMimoChatCompletions(c.Request.Context(), c, account, forwardBody)
+		} else if account.Platform == service.PlatformQwen {
+			result, err = h.gatewayService.ForwardQwenChatCompletions(c.Request.Context(), c, account, forwardBody)
+		} else {
+			result, err = h.gatewayService.ForwardAsChatCompletions(c.Request.Context(), c, account, forwardBody, parsedReq)
+		}
 
 		if accountReleaseFunc != nil {
 			accountReleaseFunc()

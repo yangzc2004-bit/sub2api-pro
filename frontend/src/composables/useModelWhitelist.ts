@@ -86,24 +86,17 @@ const zhipuModels = [
   'cogview-3', 'cogvideo'
 ]
 
-// 阿里 通义千问
+// 阿里 通义千问（网页版）
 const qwenModels = [
-  'qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-max-longcontext', 'qwen-long',
-  'qwen2-72b-instruct', 'qwen2-57b-a14b-instruct', 'qwen2-7b-instruct',
-  'qwen2.5-72b-instruct', 'qwen2.5-32b-instruct', 'qwen2.5-14b-instruct',
-  'qwen2.5-7b-instruct', 'qwen2.5-3b-instruct', 'qwen2.5-1.5b-instruct',
-  'qwen2.5-coder-32b-instruct', 'qwen2.5-coder-14b-instruct', 'qwen2.5-coder-7b-instruct',
-  'qwen3-235b-a22b',
-  'qwq-32b', 'qwq-32b-preview'
+  'qwen3.6-plus', 'qwen3.6plus', 'qwen3.6',
+  'qwen3-coder-plus', 'qwen3-coder', 'qwen3-coder-flash',
+  'qwq-plus',
+  'qwen3.5-vl-plus'
 ]
 
 // DeepSeek
 const deepseekModels = [
-  'deepseek-chat', 'deepseek-coder', 'deepseek-reasoner',
-  'deepseek-v3', 'deepseek-v3-0324',
-  'deepseek-r1', 'deepseek-r1-0528',
-  'deepseek-r1-distill-qwen-32b', 'deepseek-r1-distill-qwen-14b', 'deepseek-r1-distill-qwen-7b',
-  'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-llama-8b'
+  'deepseek-v4-flash', 'deepseek-v4-pro'
 ]
 
 // Mistral
@@ -153,6 +146,32 @@ const yiModels = [
 const moonshotModels = [
   'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k',
   'kimi-latest'
+]
+
+const kimiModels = [
+  'kimi-for-coding',
+  'kimi-k2.6',
+  'kimi-k2.6-thinking',
+  'kimi-k2.6-search',
+  'kimi-k2.6-thinking-search',
+  'kimi-k2.6-vision',
+  'kimi-k2.6-vision-thinking',
+  'kimi-k2.6-vision-search',
+  'kimi-k2.6-full',
+  'kimi-k2.6-multimodal',
+  'kimi-k2.6-tools',
+  'kimi-k2.6-tools-search'
+]
+
+const mimoModels = [
+  'mimo-v2.5-pro',
+  'mimo-v2.5',
+  'mimo-v2-pro',
+  'mimo-v2-omni',
+  'mimo-v2-flash',
+  'mimo-v2.5-tts',
+  'mimo-v2.5-tts-voicedesign',
+  'mimo-v2.5-tts-voiceclone'
 ]
 
 // 字节跳动 豆包
@@ -215,6 +234,8 @@ const allModelsList: string[] = [
   ...cohereModels,
   ...yiModels,
   ...moonshotModels,
+  ...kimiModels,
+  ...mimoModels,
   ...doubaoModels,
   ...minimaxModels,
   ...baiduModels,
@@ -263,6 +284,39 @@ const geminiPresetMappings = [
   { label: '2.5 Image', from: 'gemini-2.5-flash-image', to: 'gemini-2.5-flash-image', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' },
   { label: '2.5 Pro', from: 'gemini-2.5-pro', to: 'gemini-2.5-pro', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
   { label: '3.1 Image', from: 'gemini-3.1-flash-image', to: 'gemini-3.1-flash-image', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' }
+]
+
+const kimiPresetMappings = [
+  { label: 'Kimi Code', from: 'kimi-for-coding', to: 'kimi-for-coding', color: 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-900/30 dark:text-slate-300' },
+  { label: 'K2.6', from: 'kimi-k2.6', to: 'kimi-for-coding', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  { label: 'K2.6 Thinking', from: 'kimi-k2.6-thinking', to: 'kimi-for-coding', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' },
+  { label: 'K2.6 Search', from: 'kimi-k2.6-search', to: 'kimi-for-coding', color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' },
+  { label: 'K2.6 Tools', from: 'kimi-k2.6-tools', to: 'kimi-for-coding', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400' },
+  { label: 'K2.6 Multimodal', from: 'kimi-k2.6-multimodal', to: 'kimi-for-coding', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' }
+]
+
+const mimoPresetMappings = [
+  { label: 'MiMo 2.5 Pro', from: 'mimo-v2.5-pro', to: 'mimo-v2.5-pro', color: 'bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-400' },
+  { label: 'MiMo 2.5', from: 'mimo-v2.5', to: 'mimo-v2.5', color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' },
+  { label: 'MiMo Omni', from: 'mimo-v2-omni', to: 'mimo-v2-omni', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' },
+  { label: 'MiMo Flash', from: 'mimo-v2-flash', to: 'mimo-v2-flash', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' },
+  { label: 'MiMo TTS', from: 'mimo-v2.5-tts', to: 'mimo-v2.5-tts', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400' }
+]
+
+const qwenPresetMappings = [
+  { label: 'Qwen 3.6 Plus', from: 'qwen3.6-plus', to: 'qwen3.6-plus', color: 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400' },
+  { label: 'Qwen 3.6 Plus Legacy', from: 'qwen3.6plus', to: 'qwen3.6-plus', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  { label: 'Qwen 3.6', from: 'qwen3.6', to: 'qwen3.6', color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400' },
+  { label: 'Qwen 3 Coder Plus', from: 'qwen3-coder-plus', to: 'qwen3-coder-plus', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  { label: 'Qwen 3 Coder', from: 'qwen3-coder', to: 'qwen3-coder', color: 'bg-lime-100 text-lime-700 hover:bg-lime-200 dark:bg-lime-900/30 dark:text-lime-400' },
+  { label: 'Qwen 3 Coder Flash', from: 'qwen3-coder-flash', to: 'qwen3-coder-flash', color: 'bg-stone-100 text-stone-700 hover:bg-stone-200 dark:bg-stone-900/30 dark:text-stone-300' },
+  { label: 'QwQ Plus', from: 'qwq-plus', to: 'qwq-plus', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
+  { label: 'Qwen 3.5 VL Plus', from: 'qwen3.5-vl-plus', to: 'qwen3.5-vl-plus', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' }
+]
+
+const deepseekPresetMappings = [
+  { label: 'DeepSeek V4 Flash', from: 'deepseek-v4-flash', to: 'deepseek-v4-flash', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' },
+  { label: 'DeepSeek V4 Pro', from: 'deepseek-v4-pro', to: 'deepseek-v4-pro', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' }
 ]
 
 // Antigravity 预设映射（支持通配符）
@@ -354,6 +408,8 @@ export function getModelsByPlatform(platform: string): string[] {
     case 'claude': return claudeModels
     case 'gemini': return geminiModels
     case 'antigravity': return antigravityModels
+    case 'kimi': return kimiModels
+    case 'mimo': return mimoModels
     case 'zhipu': return zhipuModels
     case 'qwen': return qwenModels
     case 'deepseek': return deepseekModels
@@ -378,6 +434,10 @@ export function getPresetMappingsByPlatform(platform: string) {
   if (platform === 'openai') return openaiPresetMappings
   if (platform === 'gemini') return geminiPresetMappings
   if (platform === 'antigravity') return antigravityPresetMappings
+  if (platform === 'kimi') return kimiPresetMappings
+  if (platform === 'mimo') return mimoPresetMappings
+  if (platform === 'qwen') return qwenPresetMappings
+  if (platform === 'deepseek') return deepseekPresetMappings
   if (platform === 'bedrock') return bedrockPresetMappings
   return anthropicPresetMappings
 }

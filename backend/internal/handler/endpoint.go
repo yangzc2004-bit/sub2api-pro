@@ -91,6 +91,18 @@ func DeriveUpstreamEndpoint(inbound, rawRequestPath, platform string) string {
 	case service.PlatformGemini:
 		return EndpointGeminiModels
 
+	case service.PlatformKimi:
+		return EndpointChatCompletions
+
+	case service.PlatformMimo:
+		if inbound == EndpointMessages {
+			return EndpointMessages
+		}
+		return EndpointChatCompletions
+
+	case service.PlatformQwen:
+		return EndpointChatCompletions
+
 	case service.PlatformAntigravity:
 		// Antigravity accounts serve both Claude and Gemini.
 		if inbound == EndpointGeminiModels {

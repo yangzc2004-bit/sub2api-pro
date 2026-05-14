@@ -37,6 +37,10 @@ const (
 	PlatformOpenAI      = domain.PlatformOpenAI
 	PlatformGemini      = domain.PlatformGemini
 	PlatformAntigravity = domain.PlatformAntigravity
+	PlatformKimi        = domain.PlatformKimi
+	PlatformMimo        = domain.PlatformMimo
+	PlatformQwen        = domain.PlatformQwen
+	PlatformDeepSeek    = domain.PlatformDeepSeek
 )
 
 // Account type constants

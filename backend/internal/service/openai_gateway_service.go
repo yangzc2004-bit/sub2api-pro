@@ -1816,21 +1816,43 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 }
 
 func (s *OpenAIGatewayService) listSchedulableAccounts(ctx context.Context, groupID *int64) ([]Account, error) {
-	if s.schedulerSnapshot != nil {
-		accounts, _, err := s.schedulerSnapshot.ListSchedulableAccounts(ctx, groupID, PlatformOpenAI, false)
-		return accounts, err
+	appendAccounts := func(dst []Account, src []Account) []Account {
+		if len(src) == 0 {
+			return dst
+		}
+		return append(dst, src...)
 	}
-	var accounts []Account
-	var err error
-	if s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
-		accounts, err = s.accountRepo.ListSchedulableByPlatform(ctx, PlatformOpenAI)
-	} else if groupID != nil {
-		accounts, err = s.accountRepo.ListSchedulableByGroupIDAndPlatform(ctx, *groupID, PlatformOpenAI)
-	} else {
-		accounts, err = s.accountRepo.ListSchedulableUngroupedByPlatform(ctx, PlatformOpenAI)
+	loadPlatformAccounts := func(platform string) ([]Account, error) {
+		// DeepSeek accounts are OpenAI-compatible and may be attached to groups whose
+		// platform is "openai" (for OpenAI protocol routing). Scheduler snapshots are
+		// bucketed by (group, platform), so the normal snapshot lookup for
+		// platform=deepseek can be empty/stale when the group itself is platform=openai.
+		// Read DeepSeek candidates directly from the repository to keep the
+		// cross-platform OpenAI-compatible pool visible.
+		if s.schedulerSnapshot != nil && platform != PlatformDeepSeek {
+			accounts, _, err := s.schedulerSnapshot.ListSchedulableAccounts(ctx, groupID, platform, false)
+			return accounts, err
+		}
+		if s.cfg != nil && s.cfg.RunMode == config.RunModeSimple {
+			return s.accountRepo.ListSchedulableByPlatform(ctx, platform)
+		}
+		if groupID != nil {
+			return s.accountRepo.ListSchedulableByGroupIDAndPlatform(ctx, *groupID, platform)
+		}
+		return s.accountRepo.ListSchedulableUngroupedByPlatform(ctx, platform)
 	}
+
+	openAIAccounts, err := loadPlatformAccounts(PlatformOpenAI)
 	if err != nil {
 		return nil, fmt.Errorf("query accounts failed: %w", err)
+	}
+	accounts := append([]Account(nil), openAIAccounts...)
+
+	deepSeekAccounts, err := loadPlatformAccounts(PlatformDeepSeek)
+	if err != nil {
+		slog.Warn("openai_gateway.deepseek_accounts_query_failed", "group_id", derefGroupID(groupID), "error", err)
+	} else {
+		accounts = appendAccounts(accounts, deepSeekAccounts)
 	}
 	return accounts, nil
 }
@@ -5208,7 +5230,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if result == nil {
 		return errors.New("openai usage result is nil")
 	}
-	if s.rateLimitService != nil && input.Account != nil && input.Account.Platform == PlatformOpenAI {
+	if s.rateLimitService != nil && input.Account != nil && input.Account.IsOpenAI() {
 		s.rateLimitService.ResetOpenAI403Counter(ctx, input.Account.ID)
 	}
 

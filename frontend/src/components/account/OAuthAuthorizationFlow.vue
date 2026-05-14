@@ -302,6 +302,15 @@
 
         <!-- Manual Authorization Flow -->
         <div v-if="inputMethod === 'manual'" class="space-y-4">
+          <div
+            v-if="platform === 'kimi' && authUrl"
+            class="rounded-lg border border-cyan-300 bg-cyan-50 p-3 dark:border-cyan-700 dark:bg-cyan-900/30"
+          >
+            <p class="text-sm text-cyan-800 dark:text-cyan-200">
+              Kimi Code device login
+              <span v-if="kimiUserCode" class="ml-2 font-mono font-semibold">{{ kimiUserCode }}</span>
+            </p>
+          </div>
           <p class="mb-4 text-sm text-blue-800 dark:text-blue-300">
             {{ oauthFollowSteps }}
           </p>
@@ -484,7 +493,7 @@
                   class="mb-3 text-sm text-blue-700 dark:text-blue-300"
                   v-text="oauthAuthCodeDesc"
                 ></p>
-                <div>
+                <div v-if="platform !== 'kimi'">
                   <label class="input-label">
                     <Icon name="key" size="sm" class="mr-1 inline text-blue-500" />
                     {{ oauthAuthCode }}
@@ -518,6 +527,12 @@
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div v-else>
+                  <p class="text-sm text-blue-700 dark:text-blue-300">
+                    {{ t('admin.accounts.oauth.kimi.deviceCodeHint', 'Authorize Kimi Code in the opened page, then click Complete Authorization. No code needs to be pasted.') }}
+                  </p>
                 </div>
 
                 <!-- Error Message -->
@@ -563,6 +578,7 @@ interface Props {
   showAccessTokenOption?: boolean
   platform?: AccountPlatform // Platform type for different UI/text
   showProjectId?: boolean // New prop to control project ID visibility
+  kimiUserCode?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -579,6 +595,7 @@ const props = withDefaults(defineProps<Props>(), {
   showMobileRefreshTokenOption: false,
   showSessionTokenOption: false,
   showAccessTokenOption: false,
+  kimiUserCode: '',
   platform: 'anthropic',
   showProjectId: true
 })

@@ -10,6 +10,29 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 )
 
+type KimiDeviceAuthorizationResponse struct {
+	DeviceCode              string `json:"device_code"`
+	UserCode                string `json:"user_code"`
+	VerificationURI         string `json:"verification_uri"`
+	VerificationURIComplete string `json:"verification_uri_complete"`
+	ExpiresIn               int64  `json:"expires_in"`
+	Interval                int64  `json:"interval"`
+}
+
+type KimiTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	Scope        string `json:"scope"`
+}
+
+type KimiOAuthClient interface {
+	StartDeviceAuthorization(ctx context.Context, proxyURL string) (*KimiDeviceAuthorizationResponse, error)
+	PollToken(ctx context.Context, deviceCode string, proxyURL string) (*KimiTokenResponse, error)
+	RefreshToken(ctx context.Context, refreshToken string, proxyURL string) (*KimiTokenResponse, error)
+}
+
 // OpenAIOAuthClient interface for OpenAI OAuth operations
 type OpenAIOAuthClient interface {
 	ExchangeCode(ctx context.Context, code, codeVerifier, redirectURI, proxyURL, clientID string) (*openai.TokenResponse, error)
