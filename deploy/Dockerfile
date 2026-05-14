@@ -19,6 +19,10 @@ FROM ${NODE_IMAGE} AS frontend-builder
 
 WORKDIR /app/frontend
 
+# Keep frontend type-check/build below small VPS limits by allowing Node to use
+# the temporary swap configured during low-memory server builds.
+ENV NODE_OPTIONS=--max-old-space-size=1536
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
