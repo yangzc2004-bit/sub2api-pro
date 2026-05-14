@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "postbuild": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File copy-build-output.ps1",
+    "postbuild": "node scripts/copy-build-output.mjs",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "lint:check": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
