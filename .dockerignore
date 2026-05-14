@@ -28,10 +28,25 @@ build/
 
 # Node modules (will be installed in container)
 frontend/node_modules/
+frontend/.pnpm-store/
+frontend/dist/
+frontend/pnpm-workspace.yaml
 node_modules/
 
 # Go build cache (will be built in container)
 backend/vendor/
+backend/bin/
+backend/logs/
+backend/data/
+backend/*.exe
+backend/*.exe~
+backend/sub2api-local*
+backend/sub2api-linux-amd64*
+backend/sub2api-stream-test*
+backend/sub2api-test-old*
+backend/sub2api-old-test*
+backend/*.bak*
+backend/*.combined.log
 
 # Test files
 *_test.go
@@ -75,3 +90,6 @@ deploy/redis_data/
 .claude/
 issues/
 CLAUDE.md
+
+# Local Codex / temporary artifacts
+.codex-qwen2API/
