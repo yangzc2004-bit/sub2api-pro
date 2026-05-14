@@ -66,6 +66,38 @@ var (
 		Mode:                    "chat",
 		SupportsPromptCaching:   true,
 	}
+	mimoProFallbackPricing = &LiteLLMModelPricing{
+		InputCostPerToken:       8.6e-06, // 8.60 site credits per MTok
+		OutputCostPerToken:      2.6e-05, // 26.00 site credits per MTok
+		CacheReadInputTokenCost: 1.8e-06, // 1.80 site credits per MTok
+		LiteLLMProvider:         "mimo",
+		Mode:                    "chat",
+		SupportsPromptCaching:   true,
+	}
+	mimoBaseFallbackPricing = &LiteLLMModelPricing{
+		InputCostPerToken:       3.5e-06,  // 3.50 site credits per MTok
+		OutputCostPerToken:      1.75e-05, // 17.50 site credits per MTok
+		CacheReadInputTokenCost: 7e-07,    // 0.70 site credits per MTok
+		LiteLLMProvider:         "mimo",
+		Mode:                    "chat",
+		SupportsPromptCaching:   true,
+	}
+	deepSeekV4FlashFallbackPricing = &LiteLLMModelPricing{
+		InputCostPerToken:       1.15e-06, // 1.15 site credits per MTok
+		OutputCostPerToken:      2.5e-06,  // 2.50 site credits per MTok
+		CacheReadInputTokenCost: 3e-08,    // 0.03 site credits per MTok
+		LiteLLMProvider:         "deepseek",
+		Mode:                    "chat",
+		SupportsPromptCaching:   true,
+	}
+	deepSeekV4ProFallbackPricing = &LiteLLMModelPricing{
+		InputCostPerToken:       4e-06,   // 4.00 site credits per MTok
+		OutputCostPerToken:      7.5e-06, // 7.50 site credits per MTok
+		CacheReadInputTokenCost: 3.5e-08, // 0.035 site credits per MTok
+		LiteLLMProvider:         "deepseek",
+		Mode:                    "chat",
+		SupportsPromptCaching:   true,
+	}
 )
 
 // LiteLLMModelPricing LiteLLM价格数据结构
@@ -552,8 +584,11 @@ func (s *PricingService) GetModelPricing(modelName string) *LiteLLMModelPricing 
 	if isKimiPricingModel(lookupCandidates[0]) {
 		return kimiK26FallbackPricing
 	}
-	if strings.HasPrefix(lookupCandidates[0], "mimo-") {
-		return mimoFallbackPricing
+	if pricing := matchMimoFallbackPricing(lookupCandidates[0]); pricing != nil {
+		return pricing
+	}
+	if pricing := matchDeepSeekV4FallbackPricing(lookupCandidates[0]); pricing != nil {
+		return pricing
 	}
 
 	// 1. 精确匹配
@@ -634,6 +669,29 @@ func isKimiPricingModel(model string) bool {
 	return strings.HasPrefix(model, "kimi-") ||
 		strings.HasPrefix(model, "moonshot-") ||
 		model == "kimi-for-coding"
+}
+
+func matchMimoFallbackPricing(model string) *LiteLLMModelPricing {
+	model = strings.ToLower(strings.TrimSpace(model))
+	if !strings.HasPrefix(model, "mimo-") {
+		return nil
+	}
+	if strings.Contains(model, "-pro") || strings.HasPrefix(model, "mimo-v2.5-pro") {
+		return mimoProFallbackPricing
+	}
+	return mimoBaseFallbackPricing
+}
+
+func matchDeepSeekV4FallbackPricing(model string) *LiteLLMModelPricing {
+	model = strings.ToLower(strings.TrimSpace(model))
+	switch model {
+	case "deepseek-v4-flash":
+		return deepSeekV4FlashFallbackPricing
+	case "deepseek-v4-pro":
+		return deepSeekV4ProFallbackPricing
+	default:
+		return nil
+	}
 }
 
 func normalizeModelNameForPricing(model string) string {

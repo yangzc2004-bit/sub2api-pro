@@ -242,3 +242,31 @@ func TestParsePricingData_PreservesServiceTierPriorityFields(t *testing.T) {
 	require.InDelta(t, 0.0000005, pricing.CacheReadInputTokenCostPriority, 1e-12)
 	require.True(t, pricing.SupportsServiceTier)
 }
+
+func TestGetModelPricing_ProPlatformFallbackPricing(t *testing.T) {
+	svc := &PricingService{pricingData: map[string]*LiteLLMModelPricing{}}
+
+	tests := []struct {
+		model      string
+		inputMTok  float64
+		cacheMTok  float64
+		outputMTok float64
+	}{
+		{model: "deepseek-v4-flash", inputMTok: 1.15, cacheMTok: 0.03, outputMTok: 2.5},
+		{model: "deepseek-v4-pro", inputMTok: 4, cacheMTok: 0.035, outputMTok: 7.5},
+		{model: "mimo-v2.5-pro", inputMTok: 8.6, cacheMTok: 1.8, outputMTok: 26},
+		{model: "mimo-v2-pro", inputMTok: 8.6, cacheMTok: 1.8, outputMTok: 26},
+		{model: "mimo-v2.5", inputMTok: 3.5, cacheMTok: 0.7, outputMTok: 17.5},
+		{model: "mimo-v2-omni", inputMTok: 3.5, cacheMTok: 0.7, outputMTok: 17.5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.model, func(t *testing.T) {
+			got := svc.GetModelPricing(tt.model)
+			require.NotNil(t, got)
+			require.InDelta(t, tt.inputMTok/1_000_000, got.InputCostPerToken, 1e-12)
+			require.InDelta(t, tt.cacheMTok/1_000_000, got.CacheReadInputTokenCost, 1e-12)
+			require.InDelta(t, tt.outputMTok/1_000_000, got.OutputCostPerToken, 1e-12)
+		})
+	}
+}
