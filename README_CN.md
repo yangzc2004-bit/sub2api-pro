@@ -86,13 +86,21 @@ POST /api/v1/admin/kimi/oauth/accounts/:id/refresh
 - DeepSeek API Key Chat Completions 测试；
 - 测试过程通过 SSE 实时返回事件，便于后台查看上游响应和错误。
 
-### 6. 计费与定价增强
+### 6. Gemini Google One 429 策略修复
+
+针对 Gemini CLI / Google One Pro 反代账号，已修复 `google_one` / `google_ai_pro` OAuth 账号在上游返回 `MODEL_CAPACITY_EXHAUSTED` 临时 429 时，被误判为 AI Studio/API Key 日配额并锁到次日的问题。
+
+- `google_one` 临时容量型 429 改为按 Gemini tier cooldown 处理，`google_ai_pro` 默认短冷却为 5 分钟；
+- AI Studio / API Key 的日配额类 429 仍保留 PST 午夜重置兜底；
+- 覆盖了 `RESOURCE_EXHAUSTED` + `MODEL_CAPACITY_EXHAUSTED` 回归测试，避免短时间少量请求后被错误锁到第二天。
+
+### 7. 计费与定价增强
 
 - Kimi 模型新增静态兜底定价，远程定价源缺失时仍可自动填充；
 - MiMo 模型新增零价/自定义兜底定价入口，方便作为内部额度或订阅套餐资源管理；
 - 支持本地 `model_pricing.json` / `model_pricing.sha256` 快照作为定价数据补充。
 
-### 7. 前端管理体验增强
+### 8. 前端管理体验增强
 
 - 新增 Kimi、MiMo、Qwen、DeepSeek 平台选择入口；
 - 新增平台说明卡片、默认 Base URL、专属凭证字段；
@@ -219,6 +227,7 @@ POST /v1/messages/count_tokens  # 仅支持对应平台
 
 - Kimi、Qwen、MiMo、DeepSeek 的上游模型、鉴权字段和可用接口可能随平台变化，需要以实际账号权限和上游返回为准；
 - Qwen Web 接入依赖浏览器会话 Token/Cookie，过期后需重新更新；
+- Gemini `google_one` OAuth 账号遇到临时容量型 429 时会走短冷却，不再按日配额锁到次日；AI Studio/API Key 的日配额兜底逻辑保持不变；
 - 建议为不同平台单独建分组，分别配置模型白名单、倍率、限流和错误透传规则；
 - 生产环境请务必配置 HTTPS、强密码、数据库备份、Redis 持久化和反向代理超时。
 

@@ -25,6 +25,7 @@
 - **DeepSeek support**: independent platform for OpenAI-compatible API key accounts.
 - **Model mappings**: built-in aliases for Kimi K2.6, Qwen 3.x/Coder/VL, MiMo V2/V2.5/TTS, and DeepSeek V4 models.
 - **Account testing**: SSE-based live connectivity tests for Kimi, Qwen, MiMo, and DeepSeek accounts.
+- **Gemini Google One 429 fallback**: transient `MODEL_CAPACITY_EXHAUSTED` 429s from `google_one` / Google AI Pro OAuth accounts now use the Gemini tier cooldown instead of the AI Studio/API-key daily reset fallback.
 - **Pricing fallback**: static fallback pricing for Kimi and MiMo models, plus local pricing snapshot support.
 - **Admin UI updates**: new platform selectors, platform icons/colors, credential forms, filters, charts, and API key usage examples.
 - **Build workflow**: frontend build output can be copied into the backend embedded static directory automatically.
@@ -98,6 +99,7 @@ POST /api/v1/admin/kimi/oauth/accounts/:id/refresh
 
 - Upstream model availability and authentication fields depend on the actual upstream account status.
 - Qwen Web accounts rely on browser Session Token/Cookie values and may need manual refresh after expiration.
+- Gemini `google_one` OAuth accounts keep short cooldown behavior for temporary model-capacity 429s; AI Studio/API-key accounts still keep the daily reset fallback for quota-style 429s.
 - For production deployments, configure HTTPS, strong admin credentials, database backups, Redis persistence, and proper reverse proxy timeouts.
 - If using Nginx with Codex CLI / Claude Code style clients, enable:
 
