@@ -1,23 +1,19 @@
 <template>
   <div class="table-page-layout" :class="{ 'mobile-mode': isMobile }">
-    <!-- 固定区域：操作按钮 -->
     <div v-if="$slots.actions" class="layout-section-fixed">
       <slot name="actions" />
     </div>
 
-    <!-- 固定区域：搜索和过滤器 -->
     <div v-if="$slots.filters" class="layout-section-fixed">
       <slot name="filters" />
     </div>
 
-    <!-- 滚动区域：表格 -->
     <div class="layout-section-scrollable">
       <div class="card table-scroll-container">
         <slot name="table" />
       </div>
     </div>
 
-    <!-- 固定区域：分页器 -->
     <div v-if="$slots.pagination" class="layout-section-fixed">
       <slot name="pagination" />
     </div>
@@ -44,77 +40,112 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 桌面端：Flexbox 布局 */
 .table-page-layout {
-  @apply flex flex-col gap-6;
-  height: calc(100vh - 64px - 4rem); /* 减去 header + lg:p-8 的上下padding */
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-direction: column;
+  gap: 1rem;
+  height: calc(100vh - 64px - 3rem);
 }
 
 .layout-section-fixed {
-  @apply flex-shrink-0;
+  min-width: 0;
+  max-width: 100%;
+  flex-shrink: 0;
 }
 
 .layout-section-scrollable {
-  @apply flex-1 min-h-0 flex flex-col;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1;
+  flex-direction: column;
 }
 
-/* 表格滚动容器 - 增强版表体滚动方案 */
 .table-scroll-container {
-  @apply flex h-full flex-col overflow-hidden rounded-lg border shadow-glass backdrop-blur-xl dark:border-dark-700;
-  border-color: var(--glass-border);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 247, 236, 0.26)),
-    var(--glass-surface);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 rgba(151, 126, 96, 0.08),
-    var(--glass-shadow);
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--app-line);
+  border-radius: var(--ui-radius);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
 }
 
 .table-scroll-container :deep(.table-wrapper) {
-  @apply flex-1 overflow-x-auto overflow-y-auto;
-  /* 确保横向滚动条显示在最底部 */
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
   scrollbar-gutter: stable;
 }
 
 .table-scroll-container :deep(table) {
-  @apply w-full;
-  min-width: max-content; /* 关键：确保表格宽度根据内容撑开，从而触发横向滚动 */
-  display: table; /* 使用标准 table 布局以支持 sticky 列 */
+  width: 100%;
+  min-width: max-content;
+  display: table;
 }
 
 .table-scroll-container :deep(thead) {
-  @apply bg-gray-100/80 backdrop-blur-md dark:bg-dark-800/80;
-}
-
-.table-scroll-container :deep(tbody) {
-  /* 保持默认 table-row-group 显示，不使用 block */
+  background: var(--app-surface-2);
 }
 
 .table-scroll-container :deep(th) {
-  @apply px-5 py-4 text-left text-sm font-medium text-gray-600 dark:text-dark-300 border-b border-gray-200 dark:border-dark-700;
+  border-bottom: 1px solid var(--app-line);
+  color: var(--app-muted);
+  padding: 0.75rem 1.25rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .table-scroll-container :deep(td) {
-  @apply px-5 py-4 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-dark-800;
+  border-bottom: 1px solid var(--app-line);
+  color: var(--app-text-soft);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
 }
 
-/* 移动端：恢复正常滚动 */
 .table-page-layout.mobile-mode .table-scroll-container {
-  @apply h-auto overflow-visible border-none shadow-none bg-transparent;
+  height: auto;
+  overflow: hidden;
 }
 
 .table-page-layout.mobile-mode .layout-section-scrollable {
-  @apply flex-none min-h-fit;
+  min-height: 0;
+  flex: none;
 }
 
 .table-page-layout.mobile-mode .table-scroll-container :deep(.table-wrapper) {
-  @apply overflow-visible;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .table-page-layout.mobile-mode .table-scroll-container :deep(table) {
-  @apply flex-none;
   display: table;
-  min-width: 100%;
+  min-width: max-content;
+}
+
+@media (max-width: 767px) {
+  .table-page-layout.mobile-mode .table-scroll-container {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .table-page-layout.mobile-mode .table-scroll-container :deep(.table-wrapper) {
+    overflow: visible;
+  }
+
+  .table-page-layout.mobile-mode .table-scroll-container :deep(table) {
+    min-width: 100%;
+  }
 }
 </style>

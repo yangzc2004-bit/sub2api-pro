@@ -43,15 +43,11 @@ const { isDark, setTheme } = useThemeMode()
   align-items: center;
   justify-content: center;
   width: 4.5rem;
-  border: 1px solid rgb(230 219 201);
-  background: rgb(246 242 234 / 0.82);
+  border: 1px solid var(--app-line);
+  border-radius: var(--ui-radius);
+  background: var(--app-surface-2);
   padding: 0.125rem;
   gap: 0.125rem;
-}
-
-.dark .theme-toggle {
-  border-color: rgb(48 56 70);
-  background: rgb(17 24 39 / 0.82);
 }
 
 .theme-toggle-option {
@@ -62,7 +58,8 @@ const { isDark, setTheme } = useThemeMode()
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  color: rgb(112 96 82);
+  border-radius: calc(var(--ui-radius) - 1px);
+  color: var(--app-muted);
   transition:
     background-color 0.16s ease,
     border-color 0.16s ease,
@@ -70,32 +67,15 @@ const { isDark, setTheme } = useThemeMode()
 }
 
 .theme-toggle-option:hover {
-  border-color: rgb(216 204 186);
-  background: rgb(255 255 255 / 0.78);
-  color: rgb(34 28 24);
-}
-
-.dark .theme-toggle-option {
-  color: rgb(199 205 215);
-}
-
-.dark .theme-toggle-option:hover {
-  border-color: rgb(58 67 82);
-  background: rgb(31 41 55 / 0.82);
-  color: rgb(255 255 255);
+  border-color: var(--app-line);
+  background: var(--app-surface);
+  color: var(--app-text);
 }
 
 .theme-toggle-option-active {
-  border-color: rgb(218 118 63 / 0.34);
-  background: rgb(255 255 255);
-  color: rgb(177 78 25);
-  box-shadow: 0 1px 2px rgb(92 62 33 / 0.08);
-}
-
-.dark .theme-toggle-option-active {
-  border-color: rgb(122 240 196 / 0.34);
-  background: rgb(31 41 55);
-  color: rgb(122 240 196);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.22);
+  border-color: color-mix(in srgb, var(--app-brand) 42%, var(--app-line));
+  background: var(--app-surface);
+  color: var(--app-brand-strong);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
 }
 </style>

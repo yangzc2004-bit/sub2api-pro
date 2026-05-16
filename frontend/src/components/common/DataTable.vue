@@ -705,14 +705,13 @@ defineExpose({
 </script>
 
 <style scoped>
-/* 表格横向滚动 */
 .table-wrapper {
-  --table-surface: rgba(255, 252, 247, 0.76);
-  --table-surface-strong: rgba(255, 255, 255, 0.88);
-  --table-surface-hover: rgba(255, 246, 234, 0.7);
-  --table-border: rgba(205, 188, 166, 0.78);
-  --table-highlight: rgba(234, 124, 47, 0.13);
-  --select-col-width: 52px; /* 勾选列宽度：px-6 (24px*2) + checkbox (16px) */
+  --table-surface: var(--app-surface);
+  --table-surface-strong: var(--app-surface-2);
+  --table-surface-hover: color-mix(in srgb, var(--app-brand) 8%, var(--app-surface));
+  --table-border: var(--app-line);
+  --table-highlight: color-mix(in srgb, var(--app-brand) 18%, transparent);
+  --select-col-width: 52px;
   position: relative;
   overflow-x: auto;
   overflow-y: auto;
@@ -720,101 +719,33 @@ defineExpose({
   min-height: 0;
   isolation: isolate;
   border: 1px solid var(--table-border);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(255, 247, 236, 0.32)),
-    var(--table-surface);
-  backdrop-filter: blur(22px) saturate(1.12);
-  -webkit-backdrop-filter: blur(22px) saturate(1.12);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    inset 0 -1px 0 rgba(151, 126, 96, 0.08),
-    0 16px 42px rgba(60, 45, 30, 0.1);
+  border-radius: var(--ui-radius);
+  background: var(--table-surface);
+  box-shadow: var(--app-shadow);
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
     background-color 150ms ease;
 }
 
-.table-wrapper::before {
-  content: '';
-  position: sticky;
-  left: 0;
-  top: 0;
-  z-index: 260;
-  display: block;
-  width: 100%;
-  height: 1px;
-  margin-bottom: -1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
-  pointer-events: none;
-}
-
 .table-wrapper:hover,
 .table-wrapper:focus-within {
-  border-color: rgba(190, 169, 141, 0.95);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.86),
-    inset 0 -1px 0 rgba(151, 126, 96, 0.11),
-    0 20px 50px rgba(60, 45, 30, 0.14);
+  border-color: var(--app-line-strong);
+  box-shadow: var(--app-shadow-strong);
 }
 
-.dark .table-wrapper {
-  --table-surface: rgba(17, 24, 39, 0.82);
-  --table-surface-strong: rgba(31, 38, 48, 0.94);
-  --table-surface-hover: rgba(31, 38, 48, 0.82);
-  --table-border: rgba(48, 56, 70, 0.84);
-  --table-highlight: rgba(247, 148, 60, 0.1);
-  background:
-    linear-gradient(135deg, rgba(31, 38, 48, 0.72), rgba(11, 15, 20, 0.62)),
-    rgba(17, 24, 39, 0.78);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 16px 34px rgba(0, 0, 0, 0.28);
-}
-
-.dark .table-wrapper:hover,
-.dark .table-wrapper:focus-within {
-  border-color: rgba(74, 85, 100, 0.95);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 40px rgba(0, 0, 0, 0.34);
-}
-
-/* 表头容器，确保在滚动时覆盖表体内容 */
 .table-wrapper .table-header {
   position: sticky;
   top: 0;
   z-index: 200;
-  background:
-    linear-gradient(180deg, var(--table-surface-strong), rgba(239, 232, 220, 0.86));
-  backdrop-filter: blur(22px) saturate(1.12);
-  -webkit-backdrop-filter: blur(22px) saturate(1.12);
-  box-shadow:
-    inset 0 -1px 0 var(--table-border),
-    0 1px 0 rgba(255, 255, 255, 0.62);
+  background: var(--table-surface-strong);
+  box-shadow: inset 0 -1px 0 var(--table-border);
 }
 
-.dark .table-wrapper .table-header {
-  background:
-    linear-gradient(180deg, var(--table-surface-strong), rgba(17, 24, 39, 0.9));
-  box-shadow:
-    inset 0 -1px 0 var(--table-border),
-    0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-/* 表体保持在表头下方 */
 .table-body {
   position: relative;
   z-index: 0;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 247, 236, 0.28)),
-    var(--table-surface);
-}
-
-.dark .table-body {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    var(--table-surface);
+  background: var(--table-surface);
 }
 
 .table-row-hover {
@@ -825,26 +756,14 @@ defineExpose({
 }
 
 .table-row-hover:hover {
-  background:
-    linear-gradient(90deg, var(--table-highlight), transparent 36%),
-    var(--table-surface-hover);
-  box-shadow:
-    inset 2px 0 0 rgba(234, 124, 47, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -1px 0 rgba(230, 219, 201, 0.42);
-}
-
-.dark .table-row-hover:hover {
-  box-shadow:
-    inset 2px 0 0 rgba(247, 148, 60, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+  background: var(--table-surface-hover);
+  box-shadow: inset 2px 0 0 var(--app-brand);
 }
 
 .liquid-skeleton {
   position: relative;
   overflow: hidden;
-  background-color: rgba(224, 212, 196, 0.72) !important;
+  background-color: var(--app-surface-3) !important;
 }
 
 .liquid-skeleton::after {
@@ -852,12 +771,8 @@ defineExpose({
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.56), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.52), transparent);
   animation: table-shimmer 1.4s ease-in-out infinite;
-}
-
-.dark .liquid-skeleton {
-  background-color: rgba(48, 56, 70, 0.84) !important;
 }
 
 .dark .liquid-skeleton::after {
@@ -866,16 +781,10 @@ defineExpose({
 
 .mobile-table-card,
 .mobile-table-empty {
-  border: 1px solid rgba(205, 188, 166, 0.8);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(255, 247, 236, 0.34)),
-    rgba(255, 252, 247, 0.76);
-  backdrop-filter: blur(20px) saturate(1.12);
-  -webkit-backdrop-filter: blur(20px) saturate(1.12);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    inset 0 -1px 0 rgba(151, 126, 96, 0.08),
-    0 12px 30px rgba(60, 45, 30, 0.095);
+  border: 1px solid var(--app-line);
+  border-radius: var(--ui-radius);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
@@ -883,22 +792,8 @@ defineExpose({
 }
 
 .mobile-table-card:hover {
-  border-color: rgba(190, 169, 141, 0.95);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.86),
-    inset 0 -1px 0 rgba(151, 126, 96, 0.11),
-    0 16px 38px rgba(60, 45, 30, 0.13);
-}
-
-.dark .mobile-table-card,
-.dark .mobile-table-empty {
-  border-color: rgba(48, 56, 70, 0.84);
-  background:
-    linear-gradient(135deg, rgba(31, 38, 48, 0.72), rgba(11, 15, 20, 0.62)),
-    rgba(17, 24, 39, 0.78);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 14px 30px rgba(0, 0, 0, 0.24);
+  border-color: var(--app-line-strong);
+  box-shadow: var(--app-shadow-strong);
 }
 
 @keyframes table-shimmer {
@@ -907,35 +802,22 @@ defineExpose({
   }
 }
 
-/* 所有表头单元格固定在顶部 */
 .sticky-header-cell {
   position: sticky;
   top: 0;
-  z-index: 210; /* 必须高于所有表体内容 */
+  z-index: 210;
   background: transparent;
   transition:
     color 150ms ease,
     background-color 150ms ease;
 }
 
-.dark .sticky-header-cell {
-  background: transparent;
-}
-
 .sticky-header-cell:hover {
-  background-color: rgba(255, 255, 255, 0.38);
-}
-
-.dark .sticky-header-cell:hover {
-  background-color: rgba(255, 255, 255, 0.045);
+  background-color: color-mix(in srgb, var(--app-brand) 10%, transparent);
 }
 
 .table-header-label {
-  transition: transform 150ms ease;
-}
-
-.sticky-header-cell:hover .table-header-label {
-  transform: translateY(-1px);
+  transition: color 150ms ease;
 }
 
 .sort-icon svg {
@@ -946,108 +828,70 @@ defineExpose({
 }
 
 .sticky-header-cell:hover .sort-icon {
-  color: rgb(216 100 35);
+  color: var(--app-brand-strong);
 }
 
-/* Sticky 列基础样式 */
 .sticky-col {
   position: sticky;
-  z-index: 20; /* 表体固定列 */
+  z-index: 20;
 }
 
-/* 单列固定（无勾选列时） */
-.sticky-col-left {
-  left: 0;
-}
-
-/* 双列固定（有勾选列时）：第一列（勾选） */
+.sticky-col-left,
 .sticky-col-left-first {
   left: 0;
 }
 
-/* 双列固定（有勾选列时）：第二列（名称） */
 .sticky-col-left-second {
   left: var(--select-col-width);
 }
 
-/* 操作列固定 */
 .sticky-col-right {
   right: 0;
 }
 
-/* 表头 sticky 列 - 需要比普通表头单元格更高的 z-index */
 .sticky-header-cell.sticky-col {
-  z-index: 220; /* 高于普通表头单元格和表体固定列 */
+  z-index: 220;
 }
 
-/* 表体 sticky 列背景 */
 tbody .sticky-col {
   background-color: var(--table-surface);
-  backdrop-filter: blur(20px) saturate(1.12);
-  -webkit-backdrop-filter: blur(20px) saturate(1.12);
 }
 
-.dark tbody .sticky-col {
-  background-color: var(--table-surface);
-}
-
-/* hover 状态保持 */
 tbody tr:hover .sticky-col {
   background-color: var(--table-surface-hover);
 }
 
-.dark tbody tr:hover .sticky-col {
-  background-color: var(--table-surface-hover);
-}
-
-/* 阴影只在可滚动时显示 */
-/* 单列固定右侧阴影 */
-.is-scrollable .sticky-col-left::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 10px;
-  transform: translateX(100%);
-  background: linear-gradient(to right, rgba(111, 95, 79, 0.16), transparent);
-  pointer-events: none;
-}
-
-/* 双列固定：只在第二列显示阴影 */
-.is-scrollable .sticky-col-left-second::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 10px;
-  transform: translateX(100%);
-  background: linear-gradient(to right, rgba(111, 95, 79, 0.16), transparent);
-  pointer-events: none;
-}
-
-/* 操作列左侧阴影 */
+.is-scrollable .sticky-col-left::after,
+.is-scrollable .sticky-col-left-second::after,
 .is-scrollable .sticky-col-right::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
   bottom: 0;
   width: 10px;
-  transform: translateX(-100%);
-  background: linear-gradient(to left, rgba(111, 95, 79, 0.16), transparent);
   pointer-events: none;
 }
 
-/* 暗色模式阴影 */
+.is-scrollable .sticky-col-left::after,
+.is-scrollable .sticky-col-left-second::after {
+  right: 0;
+  transform: translateX(100%);
+  background: linear-gradient(to right, rgba(23, 26, 31, 0.12), transparent);
+}
+
+.is-scrollable .sticky-col-right::before {
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(to left, rgba(23, 26, 31, 0.12), transparent);
+}
+
 .dark .is-scrollable .sticky-col-left::after,
 .dark .is-scrollable .sticky-col-left-second::after {
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.2), transparent);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.28), transparent);
 }
 
 .dark .is-scrollable .sticky-col-right::before {
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.2), transparent);
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.28), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1064,25 +908,15 @@ tbody tr:hover .sticky-col {
   .liquid-skeleton::after {
     animation: none;
   }
-
-  .sticky-header-cell:hover .table-header-label {
-    transform: none;
-  }
 }
 </style>
 
 <style>
-/* ==========================================================================
-   终极悬浮滚动条防丢器 (Sledgehammer Override)
-   绕过 style.css 中 `* { scrollbar-color: transparent }` 的全局悬停隐身诅咒！
-   ========================================================================== */
-
-/* 1. 废除全局针对所有元素的 scrollbar-width 设定，拿回 Chrome/Safari 下 Webkit 滚动条规则的控制权！ */
 .table-wrapper {
-  scrollbar-width: auto !important; /* 阻止 Chrome 121 退化到原生 Mac 闪隐滚动条 */
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--app-muted) 55%, transparent) transparent !important;
 }
 
-/* 2. 重写 Webkit 滚动层，全部加上 !important 强制覆盖透明悬停陷阱 */
 .table-wrapper::-webkit-scrollbar {
   height: 12px !important;
   width: 12px !important;
@@ -1091,41 +925,18 @@ tbody tr:hover .sticky-col {
 }
 
 .table-wrapper::-webkit-scrollbar-track {
-  background-color: rgba(0, 0, 0, 0.03) !important;
-  border-radius: 0.3rem;
+  background-color: transparent !important;
   margin: 0 4px !important;
 }
-.dark .table-wrapper::-webkit-scrollbar-track {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
 
-/* 常驻、不透明的滑块，无视鼠标是否 hover 都在那！ */
 .table-wrapper::-webkit-scrollbar-thumb {
-  background-color: rgba(107, 114, 128, 0.75) !important; 
-  border-radius: 0.3rem;
-  border: 2px solid transparent !important;
+  border: 3px solid transparent !important;
+  border-radius: var(--ui-radius) !important;
+  background-color: color-mix(in srgb, var(--app-muted) 58%, transparent) !important;
   background-clip: padding-box !important;
-  -webkit-appearance: none !important;
 }
+
 .table-wrapper::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(75, 85, 99, 0.9) !important;
-}
-
-.dark .table-wrapper::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.75) !important;
-}
-.dark .table-wrapper::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(209, 213, 219, 0.9) !important;
-}
-
-/* 3. 仅给真正的 Firefox 留的后路 */
-@supports (-moz-appearance:none) {
-  .table-wrapper {
-    scrollbar-width: thin !important;
-    scrollbar-color: rgba(156, 163, 175, 0.5) rgba(0, 0, 0, 0.03) !important;
-  }
-  .dark .table-wrapper {
-    scrollbar-color: rgba(75, 85, 99, 0.5) rgba(255, 255, 255, 0.05) !important;
-  }
+  background-color: color-mix(in srgb, var(--app-muted) 82%, transparent) !important;
 }
 </style>

@@ -31,17 +31,17 @@ export default {
           950: '#14100d'
         },
         primary: {
-          50: '#fff7ed',
-          100: '#feebd3',
-          200: '#fdd59f',
-          300: '#fbb869',
-          400: '#f7943c',
-          500: '#ea7c2f',
-          600: '#d86423',
-          700: '#b64c1b',
-          800: '#903b18',
-          900: '#6e2e16',
-          950: '#3d170d'
+          50: '#fff7f1',
+          100: '#f9e3d3',
+          200: '#f3c8aa',
+          300: '#e9aa82',
+          400: '#dd8656',
+          500: '#cf7444',
+          600: '#bf6334',
+          700: '#9a4c28',
+          800: '#743a23',
+          900: '#552c1d',
+          950: '#30150d'
         },
         accent: {
           50: '#f7f8fb',
@@ -57,53 +57,46 @@ export default {
           950: '#0a0d12'
         },
         dark: {
-          50: '#f7f8fb',
-          100: '#eceff4',
-          200: '#d7dee8',
-          300: '#b4bfce',
-          400: '#8b96a8',
-          500: '#667385',
-          600: '#4a5564',
-          700: '#303846',
-          800: '#1f2630',
-          900: '#131822',
-          950: '#0b0f14'
+          50: '#f4eee6',
+          100: '#e5ddd3',
+          200: '#cfc5b9',
+          300: '#a79f95',
+          400: '#81796f',
+          500: '#67707a',
+          600: '#46515c',
+          700: '#2f3740',
+          800: '#242a31',
+          900: '#181c21',
+          950: '#0e1114'
         }
       },
       fontFamily: {
         sans: [
-          'system-ui',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'Segoe UI',
-          'Roboto',
-          'Helvetica Neue',
-          'Arial',
+          'IBM Plex Sans',
           'PingFang SC',
-          'Hiragino Sans GB',
           'Microsoft YaHei',
+          'system-ui',
           'sans-serif'
         ],
+        display: ['Space Grotesk', 'IBM Plex Sans', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
       boxShadow: {
-        glass: '0 18px 48px rgba(60, 45, 30, 0.11), 0 1px 0 rgba(255,255,255,0.68) inset',
-        'glass-sm': '0 10px 26px rgba(60, 45, 30, 0.085), 0 1px 0 rgba(255,255,255,0.6) inset',
-        glow: '0 0 20px rgba(234, 124, 47, 0.28)',
-        'glow-lg': '0 0 40px rgba(234, 124, 47, 0.36)',
-        card:
-          '0 1px 2px rgba(60, 45, 30, 0.05), 0 12px 30px rgba(60, 45, 30, 0.075), inset 0 1px 0 rgba(255,255,255,0.68)',
-        'card-hover': '0 18px 46px rgba(60, 45, 30, 0.14), inset 0 1px 0 rgba(255,255,255,0.78)',
+        glass: '0 1px 2px rgba(41, 30, 20, 0.08), 0 14px 34px rgba(41, 30, 20, 0.08)',
+        'glass-sm': '0 1px 2px rgba(41, 30, 20, 0.08), 0 8px 20px rgba(41, 30, 20, 0.06)',
+        glow: '0 8px 20px rgba(221, 134, 86, 0.22)',
+        'glow-lg': '0 16px 36px rgba(221, 134, 86, 0.26)',
+        card: '0 1px 2px rgba(41, 30, 20, 0.08), 0 14px 34px rgba(41, 30, 20, 0.08)',
+        'card-hover': '0 20px 56px rgba(41, 30, 20, 0.16)',
         'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.06)'
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #f7943c 0%, #d86423 100%)',
-        'gradient-dark': 'linear-gradient(135deg, #1f2630 0%, #0b0f14 100%)',
-        'gradient-glass':
-          'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)',
+        'gradient-radial': 'linear-gradient(var(--tw-gradient-stops))',
+        'gradient-primary': 'linear-gradient(135deg, #dd8656 0%, #bf6334 100%)',
+        'gradient-dark': 'linear-gradient(135deg, #181c21 0%, #0e1114 100%)',
+        'gradient-glass': 'linear-gradient(135deg, rgba(255,253,248,0.96) 0%, rgba(247,240,231,0.92) 100%)',
         'mesh-gradient':
-          'radial-gradient(at 14% 18%, rgba(234, 124, 47, 0.075) 0px, transparent 46%), radial-gradient(at 82% 8%, rgba(98, 113, 137, 0.06) 0px, transparent 44%), radial-gradient(at 52% 82%, rgba(251, 191, 36, 0.045) 0px, transparent 46%)'
+          'linear-gradient(rgba(23, 26, 31, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(23, 26, 31, 0.035) 1px, transparent 1px)'
       },
       animation: {
         'fade-in': 'fadeIn 0.18s ease-out',
