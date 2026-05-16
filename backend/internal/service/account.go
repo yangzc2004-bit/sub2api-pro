@@ -550,6 +550,9 @@ func (a *Account) resolveModelMapping(rawMapping map[string]any) map[string]stri
 		if a.Platform == domain.PlatformQwen {
 			ensureQwenModelAliases(result)
 		}
+		if a.Platform == domain.PlatformDeepSeek {
+			ensureDeepSeekV4ModelAliases(result)
+		}
 		return result
 	}
 

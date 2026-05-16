@@ -22,7 +22,7 @@ func TestConvertAnthropicToChatCompletionsBasic(t *testing.T) {
 		t.Fatalf("ConvertAnthropicToChatCompletions error: %v", err)
 	}
 
-	var openaiReq map[string]interface{}
+	var openaiReq map[string]any
 	if err := json.Unmarshal(openaiBody, &openaiReq); err != nil {
 		t.Fatalf("parse openai request error: %v", err)
 	}
@@ -30,11 +30,11 @@ func TestConvertAnthropicToChatCompletionsBasic(t *testing.T) {
 	if openaiReq["model"] != "claude-3-opus" {
 		t.Errorf("expected model claude-3-opus, got %v", openaiReq["model"])
 	}
-	messages, ok := openaiReq["messages"].([]interface{})
+	messages, ok := openaiReq["messages"].([]any)
 	if !ok || len(messages) != 1 {
 		t.Fatalf("expected 1 message, got %v", openaiReq["messages"])
 	}
-	msg0, ok := messages[0].(map[string]interface{})
+	msg0, ok := messages[0].(map[string]any)
 	if !ok || msg0["role"] != "user" {
 		t.Errorf("expected role user, got %v", msg0["role"])
 	}
@@ -61,30 +61,30 @@ func TestConvertAnthropicToChatCompletionsWithTools(t *testing.T) {
 		t.Fatalf("ConvertAnthropicToChatCompletions error: %v", err)
 	}
 
-	var openaiReq map[string]interface{}
+	var openaiReq map[string]any
 	if err := json.Unmarshal(openaiBody, &openaiReq); err != nil {
 		t.Fatalf("parse openai request error: %v", err)
 	}
 
-	messages, ok := openaiReq["messages"].([]interface{})
+	messages, ok := openaiReq["messages"].([]any)
 	if !ok || len(messages) != 2 {
 		t.Fatalf("expected 2 messages (system + user), got %v", openaiReq["messages"])
 	}
 
-	msg0, ok := messages[0].(map[string]interface{})
+	msg0, ok := messages[0].(map[string]any)
 	if !ok || msg0["role"] != "system" {
 		t.Errorf("expected first message role system, got %v", messages[0])
 	}
 
-	tools, ok := openaiReq["tools"].([]interface{})
+	tools, ok := openaiReq["tools"].([]any)
 	if !ok || len(tools) != 1 {
 		t.Fatalf("expected 1 tool, got %v", openaiReq["tools"])
 	}
-	tool0, ok := tools[0].(map[string]interface{})
+	tool0, ok := tools[0].(map[string]any)
 	if !ok || tool0["type"] != "function" {
 		t.Errorf("expected tool type function, got %v", tool0["type"])
 	}
-	fn, ok := tool0["function"].(map[string]interface{})
+	fn, ok := tool0["function"].(map[string]any)
 	if !ok || fn["name"] != "Read" {
 		t.Errorf("expected tool name Read, got %v", fn["name"])
 	}
@@ -116,14 +116,17 @@ func TestConvertAnthropicToChatCompletionsPreservesImages(t *testing.T) {
 	if len(openaiReq.Messages) != 1 {
 		t.Fatalf("expected 1 message, got %d", len(openaiReq.Messages))
 	}
-	var parts []map[string]interface{}
+	var parts []map[string]any
 	if err := json.Unmarshal(openaiReq.Messages[0].Content, &parts); err != nil {
 		t.Fatalf("expected multimodal content parts: %v, raw=%s", err, string(openaiReq.Messages[0].Content))
 	}
 	if len(parts) != 2 || parts[1]["type"] != "image_url" {
 		t.Fatalf("expected image_url part, got %+v", parts)
 	}
-	imageURL := parts[1]["image_url"].(map[string]interface{})
+	imageURL, ok := parts[1]["image_url"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected image_url object, got %+v", parts[1]["image_url"])
+	}
 	if imageURL["url"] != "data:image/png;base64,aGVsbG8=" {
 		t.Fatalf("unexpected image url: %+v", imageURL)
 	}
@@ -208,22 +211,24 @@ func TestConvertAnthropicToChatCompletionsWithSystemArray(t *testing.T) {
 		t.Fatalf("ConvertAnthropicToChatCompletions error: %v", err)
 	}
 
-	var openaiReq map[string]interface{}
+	var openaiReq map[string]any
 	if err := json.Unmarshal(openaiBody, &openaiReq); err != nil {
 		t.Fatalf("parse openai request error: %v", err)
 	}
 
-	messages, ok := openaiReq["messages"].([]interface{})
+	messages, ok := openaiReq["messages"].([]any)
 	if !ok || len(messages) != 2 {
 		t.Fatalf("expected 2 messages, got %v", openaiReq["messages"])
 	}
-	msg0, ok := messages[0].(map[string]interface{})
+	msg0, ok := messages[0].(map[string]any)
 	if !ok || msg0["role"] != "system" {
 		t.Errorf("expected first message role system, got %v", messages[0])
 	}
 	// 检查 system 内容是否合并
 	var qwenReq qwenChatRequest
-	json.Unmarshal(openaiBody, &qwenReq)
+	if err := json.Unmarshal(openaiBody, &qwenReq); err != nil {
+		t.Fatalf("parse qwen request error: %v", err)
+	}
 	systemText := extractMessageText(qwenReq.Messages[0].Content)
 	if systemText != "You are helpful.\nBe concise." {
 		t.Errorf("unexpected system content: %q", systemText)
@@ -235,16 +240,16 @@ func TestConvertAnthropicToChatCompletionsRoundTrip(t *testing.T) {
 	t.Parallel()
 
 	// 原始 Anthropic 请求
-	anthropicReq := map[string]interface{}{
+	anthropicReq := map[string]any{
 		"model":      "claude-sonnet-4-6",
 		"max_tokens": 8192,
 		"stream":     true,
 		"system":     "You are Claude Code",
-		"messages": []map[string]interface{}{
+		"messages": []map[string]any{
 			{"role": "user", "content": "List files"},
 			{
 				"role": "assistant",
-				"content": []map[string]interface{}{
+				"content": []map[string]any{
 					{"type": "text", "text": "I'll list the files."},
 					{
 						"type":  "tool_use",
@@ -256,7 +261,7 @@ func TestConvertAnthropicToChatCompletionsRoundTrip(t *testing.T) {
 			},
 			{
 				"role": "user",
-				"content": []map[string]interface{}{
+				"content": []map[string]any{
 					{
 						"type":        "tool_result",
 						"tool_use_id": "toolu_01",
@@ -265,7 +270,7 @@ func TestConvertAnthropicToChatCompletionsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		"tools": []map[string]interface{}{
+		"tools": []map[string]any{
 			{
 				"name":         "Bash",
 				"description":  "Run shell commands",
@@ -281,7 +286,7 @@ func TestConvertAnthropicToChatCompletionsRoundTrip(t *testing.T) {
 	}
 
 	// 验证 OpenAI 格式
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.Unmarshal(openaiBody, &result); err != nil {
 		t.Fatalf("unmarshal result error: %v", err)
 	}
@@ -293,7 +298,7 @@ func TestConvertAnthropicToChatCompletionsRoundTrip(t *testing.T) {
 		t.Errorf("expected stream true, got %v", result["stream"])
 	}
 
-	messages, ok := result["messages"].([]interface{})
+	messages, ok := result["messages"].([]any)
 	if !ok {
 		t.Fatal("expected messages to be array")
 	}
@@ -302,7 +307,7 @@ func TestConvertAnthropicToChatCompletionsRoundTrip(t *testing.T) {
 	}
 
 	// 验证 tool 消息
-	toolMsg, ok := messages[3].(map[string]interface{})
+	toolMsg, ok := messages[3].(map[string]any)
 	if !ok || toolMsg["role"] != "tool" {
 		t.Errorf("expected message 3 to be tool, got %+v", messages[3])
 	}
