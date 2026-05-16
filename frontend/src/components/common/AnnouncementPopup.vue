@@ -156,7 +156,7 @@ watch(
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
   background: linear-gradient(to bottom, #cbd5e1, #94a3b8);
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 .dark .overflow-y-auto::-webkit-scrollbar-thumb {

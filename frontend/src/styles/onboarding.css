@@ -7,10 +7,10 @@
   z-index: 99999998 !important;
   background-color: transparent !important;
   /*
-   * 关键修复：让 overlay 不拦截点击事件
-   * 因为已设置 allowClose: false，用户不能通过点击遮罩关闭引导
+   * 关键修复：让 overlay 不拦截点击事�?
+   * 因为已设�?allowClose: false，用户不能通过点击遮罩关闭引导
    * 这样 Select 下拉菜单等脱离高亮区域的元素才能正常交互
-   * 视觉遮罩效果保持不变（SVG 仍然渲染，pointer-events 只影响交互不影响渲染）
+   * 视觉遮罩效果保持不变（SVG 仍然渲染，pointer-events 只影响交互不影响渲染�?
    */
   pointer-events: none !important;
 }
@@ -23,7 +23,7 @@
   position: relative !important;
   z-index: 99999999 !important;
   outline: 4px solid rgba(20, 184, 166, 0.2) !important;
-  border-radius: 4px !important;
+  border-radius: 0;
 }
 
 /* 2. Popover Container */
@@ -33,7 +33,7 @@
   background-color: #ffffff !important;
   border: 1px solid #e5e7eb !important;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  border-radius: 12px !important;
+  border-radius: 0;
   padding: 0 !important;
   max-width: min(440px, 90vw) !important; /* Responsive on small screens */
   color: #1f2937 !important;
@@ -78,7 +78,7 @@
   background-color: transparent !important;
   border: none !important;
   z-index: 20 !important;
-  border-radius: 4px !important;
+  border-radius: 0;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -163,7 +163,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace !important;
   background-color: #ffffff !important;
   border: 1px solid #e5e7eb !important;
-  border-radius: 4px !important;
+  border-radius: 0;
   padding: 1px 6px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
@@ -187,7 +187,7 @@
   padding: 8px 16px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
-  border-radius: 6px !important;
+  border-radius: 0;
   cursor: pointer !important;
   transition: all 0.2s !important;
   border: 1px solid transparent !important;

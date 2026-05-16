@@ -3,49 +3,71 @@ export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
+    borderRadius: {
+      none: '0',
+      sm: '0.3rem',
+      DEFAULT: '0.3rem',
+      md: '0.3rem',
+      lg: '0.3rem',
+      xl: '0.3rem',
+      '2xl': '0.3rem',
+      '3xl': '0.3rem',
+      '4xl': '0.3rem',
+      full: '0.3rem'
+    },
     extend: {
       colors: {
-        // 主色调 - Teal/Cyan 青色系
+        gray: {
+          50: '#f8f4ee',
+          100: '#efe8dc',
+          200: '#e0d4c4',
+          300: '#cbb9a5',
+          400: '#ad967d',
+          500: '#89745f',
+          600: '#6a5948',
+          700: '#4e4135',
+          800: '#332b24',
+          900: '#1f1a15',
+          950: '#14100d'
+        },
         primary: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
-          950: '#042f2e'
+          50: '#fff7ed',
+          100: '#feebd3',
+          200: '#fdd59f',
+          300: '#fbb869',
+          400: '#f7943c',
+          500: '#ea7c2f',
+          600: '#d86423',
+          700: '#b64c1b',
+          800: '#903b18',
+          900: '#6e2e16',
+          950: '#3d170d'
         },
-        // 辅助色 - 深蓝灰
         accent: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617'
+          50: '#f7f8fb',
+          100: '#e8edf5',
+          200: '#cad4e3',
+          300: '#a7b7ce',
+          400: '#8292ae',
+          500: '#627189',
+          600: '#4d5b72',
+          700: '#394353',
+          800: '#252d39',
+          900: '#151a22',
+          950: '#0a0d12'
         },
-        // 深色模式背景
         dark: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617'
+          50: '#f7f8fb',
+          100: '#eceff4',
+          200: '#d7dee8',
+          300: '#b4bfce',
+          400: '#8b96a8',
+          500: '#667385',
+          600: '#4a5564',
+          700: '#303846',
+          800: '#1f2630',
+          900: '#131822',
+          950: '#0b0f14'
         }
       },
       fontFamily: {
@@ -65,29 +87,30 @@ export default {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
       boxShadow: {
-        glass: '0 8px 32px rgba(0, 0, 0, 0.08)',
-        'glass-sm': '0 4px 16px rgba(0, 0, 0, 0.06)',
-        glow: '0 0 20px rgba(20, 184, 166, 0.25)',
-        'glow-lg': '0 0 40px rgba(20, 184, 166, 0.35)',
-        card: '0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 10px 40px rgba(0, 0, 0, 0.08)',
-        'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        glass: '0 18px 48px rgba(60, 45, 30, 0.11), 0 1px 0 rgba(255,255,255,0.68) inset',
+        'glass-sm': '0 10px 26px rgba(60, 45, 30, 0.085), 0 1px 0 rgba(255,255,255,0.6) inset',
+        glow: '0 0 20px rgba(234, 124, 47, 0.28)',
+        'glow-lg': '0 0 40px rgba(234, 124, 47, 0.36)',
+        card:
+          '0 1px 2px rgba(60, 45, 30, 0.05), 0 12px 30px rgba(60, 45, 30, 0.075), inset 0 1px 0 rgba(255,255,255,0.68)',
+        'card-hover': '0 18px 46px rgba(60, 45, 30, 0.14), inset 0 1px 0 rgba(255,255,255,0.78)',
+        'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.06)'
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
-        'gradient-dark': 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #f7943c 0%, #d86423 100%)',
+        'gradient-dark': 'linear-gradient(135deg, #1f2630 0%, #0b0f14 100%)',
         'gradient-glass':
-          'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+          'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)',
         'mesh-gradient':
-          'radial-gradient(at 40% 20%, rgba(20, 184, 166, 0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(20, 184, 166, 0.08) 0px, transparent 50%)'
+          'radial-gradient(at 14% 18%, rgba(234, 124, 47, 0.075) 0px, transparent 46%), radial-gradient(at 82% 8%, rgba(98, 113, 137, 0.06) 0px, transparent 44%), radial-gradient(at 52% 82%, rgba(251, 191, 36, 0.045) 0px, transparent 46%)'
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'slide-down': 'slideDown 0.3s ease-out',
-        'slide-in-right': 'slideInRight 0.3s ease-out',
-        'scale-in': 'scaleIn 0.2s ease-out',
+        'fade-in': 'fadeIn 0.18s ease-out',
+        'slide-up': 'slideUp 0.18s ease-out',
+        'slide-down': 'slideDown 0.16s ease-out',
+        'slide-in-right': 'slideInRight 0.18s ease-out',
+        'scale-in': 'scaleIn 0.16s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         shimmer: 'shimmer 2s linear infinite',
         glow: 'glow 2s ease-in-out infinite alternate'
@@ -118,15 +141,12 @@ export default {
           '100%': { backgroundPosition: '200% 0' }
         },
         glow: {
-          '0%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.25)' },
-          '100%': { boxShadow: '0 0 30px rgba(20, 184, 166, 0.4)' }
+          '0%': { boxShadow: '0 0 20px rgba(234, 124, 47, 0.24)' },
+          '100%': { boxShadow: '0 0 30px rgba(234, 124, 47, 0.38)' }
         }
       },
       backdropBlur: {
         xs: '2px'
-      },
-      borderRadius: {
-        '4xl': '2rem'
       }
     }
   },

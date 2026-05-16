@@ -1,21 +1,21 @@
 <template>
   <div v-if="!isDesktopViewport" class="space-y-3">
     <template v-if="loading">
-      <div v-for="i in 5" :key="i" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-900">
+      <div v-for="i in 5" :key="i" class="mobile-table-card p-4">
         <div class="space-y-3">
           <div v-for="column in dataColumns" :key="column.key" class="flex justify-between">
-            <div class="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
-            <div class="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
+            <div class="liquid-skeleton h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
+            <div class="liquid-skeleton h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
           </div>
           <div v-if="hasActionsColumn" class="border-t border-gray-200 pt-3 dark:border-dark-700">
-            <div class="h-8 w-full animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
+            <div class="liquid-skeleton h-8 w-full animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
           </div>
         </div>
       </div>
     </template>
 
     <template v-else-if="!data || data.length === 0">
-      <div class="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-dark-700 dark:bg-dark-900">
+      <div class="mobile-table-empty p-12 text-center">
         <slot name="empty">
           <div class="flex flex-col items-center">
             <Icon
@@ -35,7 +35,7 @@
       <div
         v-for="(row, index) in sortedData"
         :key="resolveRowKey(row, index)"
-        class="rounded-lg border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-900"
+        class="mobile-table-card p-4"
       >
         <div class="space-y-3">
           <div
@@ -69,17 +69,17 @@
       'is-scrollable': isScrollable
     }"
   >
-    <table class="w-full min-w-max divide-y divide-gray-200 dark:divide-dark-700">
-      <thead class="table-header bg-gray-50 dark:bg-dark-800">
+    <table class="w-full min-w-max divide-y divide-gray-200/75 dark:divide-dark-700">
+      <thead class="table-header bg-gray-50/80 dark:bg-dark-800">
         <tr>
           <th
             v-for="(column, index) in columns"
             :key="column.key"
             scope="col"
             :class="[
-              'sticky-header-cell py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-dark-400',
+              'sticky-header-cell py-3 text-left text-xs font-bold uppercase tracking-[0.04em] text-gray-600 dark:text-dark-300',
               getAdaptivePaddingClass(),
-              { 'cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-700': column.sortable },
+              { 'cursor-pointer hover:text-gray-950 dark:hover:text-white': column.sortable },
               getStickyColumnClass(column, index),
               column.class
             ]"
@@ -91,9 +91,9 @@
               :sort-key="sortKey"
               :sort-order="sortOrder"
             >
-              <div class="flex items-center space-x-1">
+              <div class="table-header-label flex items-center space-x-1">
                 <span>{{ column.label }}</span>
-                <span v-if="column.sortable" class="text-gray-400 dark:text-dark-500">
+                <span v-if="column.sortable" class="sort-icon text-gray-400 dark:text-dark-500">
                   <svg
                     v-if="sortKey === column.key"
                     class="h-4 w-4"
@@ -118,12 +118,12 @@
           </th>
         </tr>
       </thead>
-      <tbody class="table-body divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
+      <tbody class="table-body divide-y divide-gray-200/75 bg-white/80 dark:divide-dark-700 dark:bg-dark-900">
         <!-- Loading skeleton -->
         <tr v-if="loading" v-for="i in 5" :key="i">
           <td v-for="column in columns" :key="column.key" :class="['whitespace-nowrap py-4', getAdaptivePaddingClass()]">
             <div class="animate-pulse">
-              <div class="h-4 w-3/4 rounded bg-gray-200 dark:bg-dark-700"></div>
+              <div class="liquid-skeleton h-4 w-3/4 rounded bg-gray-200 dark:bg-dark-700"></div>
             </div>
           </td>
         </tr>
@@ -162,7 +162,7 @@
             :data-row-id="resolveRowKey(sortedData[virtualRow.index], virtualRow.index)"
             :data-index="virtualRow.index"
             :ref="measureElement"
-            class="hover:bg-gray-50 dark:hover:bg-dark-800"
+            class="table-row-hover"
           >
             <td
               v-for="(column, colIndex) in columns"
@@ -707,6 +707,11 @@ defineExpose({
 <style scoped>
 /* 表格横向滚动 */
 .table-wrapper {
+  --table-surface: rgba(255, 252, 247, 0.76);
+  --table-surface-strong: rgba(255, 255, 255, 0.88);
+  --table-surface-hover: rgba(255, 246, 234, 0.7);
+  --table-border: rgba(205, 188, 166, 0.78);
+  --table-highlight: rgba(234, 124, 47, 0.13);
   --select-col-width: 52px; /* 勾选列宽度：px-6 (24px*2) + checkbox (16px) */
   position: relative;
   overflow-x: auto;
@@ -714,6 +719,65 @@ defineExpose({
   flex: 1;
   min-height: 0;
   isolation: isolate;
+  border: 1px solid var(--table-border);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(255, 247, 236, 0.32)),
+    var(--table-surface);
+  backdrop-filter: blur(22px) saturate(1.12);
+  -webkit-backdrop-filter: blur(22px) saturate(1.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -1px 0 rgba(151, 126, 96, 0.08),
+    0 16px 42px rgba(60, 45, 30, 0.1);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.table-wrapper::before {
+  content: '';
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 260;
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin-bottom: -1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  pointer-events: none;
+}
+
+.table-wrapper:hover,
+.table-wrapper:focus-within {
+  border-color: rgba(190, 169, 141, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(151, 126, 96, 0.11),
+    0 20px 50px rgba(60, 45, 30, 0.14);
+}
+
+.dark .table-wrapper {
+  --table-surface: rgba(17, 24, 39, 0.82);
+  --table-surface-strong: rgba(31, 38, 48, 0.94);
+  --table-surface-hover: rgba(31, 38, 48, 0.82);
+  --table-border: rgba(48, 56, 70, 0.84);
+  --table-highlight: rgba(247, 148, 60, 0.1);
+  background:
+    linear-gradient(135deg, rgba(31, 38, 48, 0.72), rgba(11, 15, 20, 0.62)),
+    rgba(17, 24, 39, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
+.dark .table-wrapper:hover,
+.dark .table-wrapper:focus-within {
+  border-color: rgba(74, 85, 100, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 40px rgba(0, 0, 0, 0.34);
 }
 
 /* 表头容器，确保在滚动时覆盖表体内容 */
@@ -721,17 +785,126 @@ defineExpose({
   position: sticky;
   top: 0;
   z-index: 200;
-  background-color: rgb(249 250 251);
+  background:
+    linear-gradient(180deg, var(--table-surface-strong), rgba(239, 232, 220, 0.86));
+  backdrop-filter: blur(22px) saturate(1.12);
+  -webkit-backdrop-filter: blur(22px) saturate(1.12);
+  box-shadow:
+    inset 0 -1px 0 var(--table-border),
+    0 1px 0 rgba(255, 255, 255, 0.62);
 }
 
 .dark .table-wrapper .table-header {
-  background-color: rgb(31 41 55);
+  background:
+    linear-gradient(180deg, var(--table-surface-strong), rgba(17, 24, 39, 0.9));
+  box-shadow:
+    inset 0 -1px 0 var(--table-border),
+    0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* 表体保持在表头下方 */
 .table-body {
   position: relative;
   z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 247, 236, 0.28)),
+    var(--table-surface);
+}
+
+.dark .table-body {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    var(--table-surface);
+}
+
+.table-row-hover {
+  position: relative;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.table-row-hover:hover {
+  background:
+    linear-gradient(90deg, var(--table-highlight), transparent 36%),
+    var(--table-surface-hover);
+  box-shadow:
+    inset 2px 0 0 rgba(234, 124, 47, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(230, 219, 201, 0.42);
+}
+
+.dark .table-row-hover:hover {
+  box-shadow:
+    inset 2px 0 0 rgba(247, 148, 60, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.liquid-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(224, 212, 196, 0.72) !important;
+}
+
+.liquid-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.56), transparent);
+  animation: table-shimmer 1.4s ease-in-out infinite;
+}
+
+.dark .liquid-skeleton {
+  background-color: rgba(48, 56, 70, 0.84) !important;
+}
+
+.dark .liquid-skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+}
+
+.mobile-table-card,
+.mobile-table-empty {
+  border: 1px solid rgba(205, 188, 166, 0.8);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(255, 247, 236, 0.34)),
+    rgba(255, 252, 247, 0.76);
+  backdrop-filter: blur(20px) saturate(1.12);
+  -webkit-backdrop-filter: blur(20px) saturate(1.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -1px 0 rgba(151, 126, 96, 0.08),
+    0 12px 30px rgba(60, 45, 30, 0.095);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.mobile-table-card:hover {
+  border-color: rgba(190, 169, 141, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(151, 126, 96, 0.11),
+    0 16px 38px rgba(60, 45, 30, 0.13);
+}
+
+.dark .mobile-table-card,
+.dark .mobile-table-empty {
+  border-color: rgba(48, 56, 70, 0.84);
+  background:
+    linear-gradient(135deg, rgba(31, 38, 48, 0.72), rgba(11, 15, 20, 0.62)),
+    rgba(17, 24, 39, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 14px 30px rgba(0, 0, 0, 0.24);
+}
+
+@keyframes table-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* 所有表头单元格固定在顶部 */
@@ -739,11 +912,41 @@ defineExpose({
   position: sticky;
   top: 0;
   z-index: 210; /* 必须高于所有表体内容 */
-  background-color: rgb(249 250 251);
+  background: transparent;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
 }
 
 .dark .sticky-header-cell {
-  background-color: rgb(31 41 55);
+  background: transparent;
+}
+
+.sticky-header-cell:hover {
+  background-color: rgba(255, 255, 255, 0.38);
+}
+
+.dark .sticky-header-cell:hover {
+  background-color: rgba(255, 255, 255, 0.045);
+}
+
+.table-header-label {
+  transition: transform 150ms ease;
+}
+
+.sticky-header-cell:hover .table-header-label {
+  transform: translateY(-1px);
+}
+
+.sort-icon svg {
+  transition:
+    color 150ms ease,
+    transform 150ms ease,
+    opacity 150ms ease;
+}
+
+.sticky-header-cell:hover .sort-icon {
+  color: rgb(216 100 35);
 }
 
 /* Sticky 列基础样式 */
@@ -779,20 +982,22 @@ defineExpose({
 
 /* 表体 sticky 列背景 */
 tbody .sticky-col {
-  background-color: white;
+  background-color: var(--table-surface);
+  backdrop-filter: blur(20px) saturate(1.12);
+  -webkit-backdrop-filter: blur(20px) saturate(1.12);
 }
 
 .dark tbody .sticky-col {
-  background-color: rgb(17 24 39);
+  background-color: var(--table-surface);
 }
 
 /* hover 状态保持 */
 tbody tr:hover .sticky-col {
-  background-color: rgb(249 250 251);
+  background-color: var(--table-surface-hover);
 }
 
 .dark tbody tr:hover .sticky-col {
-  background-color: rgb(31 41 55);
+  background-color: var(--table-surface-hover);
 }
 
 /* 阴影只在可滚动时显示 */
@@ -805,7 +1010,7 @@ tbody tr:hover .sticky-col {
   bottom: 0;
   width: 10px;
   transform: translateX(100%);
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent);
+  background: linear-gradient(to right, rgba(111, 95, 79, 0.16), transparent);
   pointer-events: none;
 }
 
@@ -818,7 +1023,7 @@ tbody tr:hover .sticky-col {
   bottom: 0;
   width: 10px;
   transform: translateX(100%);
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent);
+  background: linear-gradient(to right, rgba(111, 95, 79, 0.16), transparent);
   pointer-events: none;
 }
 
@@ -831,7 +1036,7 @@ tbody tr:hover .sticky-col {
   bottom: 0;
   width: 10px;
   transform: translateX(-100%);
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.08), transparent);
+  background: linear-gradient(to left, rgba(111, 95, 79, 0.16), transparent);
   pointer-events: none;
 }
 
@@ -843,6 +1048,26 @@ tbody tr:hover .sticky-col {
 
 .dark .is-scrollable .sticky-col-right::before {
   background: linear-gradient(to left, rgba(0, 0, 0, 0.2), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-wrapper,
+  .table-row-hover,
+  .sticky-header-cell,
+  .table-header-label,
+  .sort-icon svg,
+  .mobile-table-card,
+  .mobile-table-empty {
+    transition-duration: 1ms;
+  }
+
+  .liquid-skeleton::after {
+    animation: none;
+  }
+
+  .sticky-header-cell:hover .table-header-label {
+    transform: none;
+  }
 }
 </style>
 
@@ -867,7 +1092,7 @@ tbody tr:hover .sticky-col {
 
 .table-wrapper::-webkit-scrollbar-track {
   background-color: rgba(0, 0, 0, 0.03) !important;
-  border-radius: 6px !important;
+  border-radius: 0.3rem;
   margin: 0 4px !important;
 }
 .dark .table-wrapper::-webkit-scrollbar-track {
@@ -877,7 +1102,7 @@ tbody tr:hover .sticky-col {
 /* 常驻、不透明的滑块，无视鼠标是否 hover 都在那！ */
 .table-wrapper::-webkit-scrollbar-thumb {
   background-color: rgba(107, 114, 128, 0.75) !important; 
-  border-radius: 6px !important;
+  border-radius: 0.3rem;
   border: 2px solid transparent !important;
   background-clip: padding-box !important;
   -webkit-appearance: none !important;
