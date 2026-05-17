@@ -361,6 +361,7 @@ export default {
     groups: 'Groups',
     channels: 'Channels',
     availableChannels: 'Available Channels',
+    modelCatalog: 'Model Catalog',
     subscriptions: 'Subscriptions',
     accounts: 'Accounts',
     proxies: 'Proxies',
@@ -993,6 +994,98 @@ export default {
       intervals: 'Tiered Pricing',
       unitPerMillion: '/ 1M tokens',
       unitPerRequest: '/ request'
+    }
+  },
+
+  modelsCatalog: {
+    kicker: 'Model Catalog',
+    title: 'Model Catalog',
+    adminTitle: 'Model Catalog Management',
+    adminDescription: 'Manage global model base prices. Channel and group pricing still take priority.',
+    description: 'Browse models supported by the current site, with unified display pricing and capability metadata.',
+    priceMultiplierNote: 'Actual usage price equals the current page price multiplied by the group multiplier.',
+    searchPlaceholder: 'Search models, providers, or tags...',
+    reset: 'Reset',
+    loadFailed: 'Failed to load model catalog',
+    copied: 'Model ID copied',
+    copyModel: 'Copy model ID',
+    allProviders: 'All Providers',
+    countSuffix: '/ {total} models',
+    noDescription: 'No description available',
+    priceUnavailable: '-',
+    sourceOfficial: 'Official pricing',
+    context: 'Context',
+    output: 'Output',
+    error: {
+      title: 'Failed to load model data',
+      retry: 'Refresh and retry'
+    },
+    admin: {
+      note: 'Prices are entered per 1M tokens and used as global base overrides.',
+      per1m: 'per 1M tokens',
+      save: 'Save',
+      saved: 'Model pricing updated',
+      saveFailed: 'Failed to update model pricing',
+      resetAll: 'Reset Pricing',
+      resetDone: 'Official pricing restored',
+      resetFailed: 'Failed to reset model pricing',
+      override: 'Custom pricing',
+      nullPlaceholder: 'Empty'
+    },
+    filters: {
+      title: 'Filters',
+      description: 'Filter models by provider, tag, and price field.',
+      providers: 'Providers',
+      tags: 'Tags',
+      priceField: 'Price Field'
+    },
+    priceMode: {
+      label: 'Price Mode',
+      standard: 'Standard',
+      cache: 'Cache'
+    },
+    unit: {
+      label: 'Unit',
+      '1m': '/1M',
+      '1k': '/1K'
+    },
+    unitSuffix: {
+      '1m': '/ 1M',
+      '1k': '/ 1K'
+    },
+    sort: {
+      name: 'Name',
+      input: 'Input',
+      output: 'Output',
+      context: 'Context'
+    },
+    priceFields: {
+      all: 'All',
+      input: 'Input',
+      output: 'Output',
+      cache: 'Cache'
+    },
+    pricing: {
+      input: 'Input',
+      output: 'Output',
+      cacheWrite: 'Cache Write',
+      cacheRead: 'Cache Read'
+    },
+    tags: {
+      chat: 'Chat',
+      reasoning: 'Reasoning',
+      tools: 'Tools',
+      vision: 'Vision',
+      thinking: 'Thinking',
+      coding: 'Coding',
+      fast: 'Fast',
+      preview: 'Preview',
+      search: 'Search',
+      audio: 'Audio'
+    },
+    empty: {
+      title: 'No matching models',
+      description: 'Try adjusting the filters or clearing the search query.'
     }
   },
 

@@ -77,6 +77,12 @@ func RegisterUserRoutes(
 		}
 
 		// 使用记录
+		// Model catalog for user-facing display only.
+		models := authenticated.Group("/models")
+		{
+			models.GET("/catalog", h.ModelCatalog.List)
+		}
+
 		usage := authenticated.Group("/usage")
 		{
 			usage.GET("", h.Usage.List)

@@ -25,6 +25,7 @@ func RegisterAdminRoutes(
 
 		// 分组管理
 		registerGroupRoutes(admin, h)
+		registerModelCatalogRoutes(admin, h)
 
 		// 账号管理
 		registerAccountRoutes(admin, h)
@@ -275,6 +276,15 @@ func registerGroupRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		groups.PUT("/:id/rpm-overrides", h.Admin.Group.BatchSetGroupRPMOverrides)
 		groups.DELETE("/:id/rpm-overrides", h.Admin.Group.ClearGroupRPMOverrides)
 		groups.GET("/:id/api-keys", h.Admin.Group.GetGroupAPIKeys)
+	}
+}
+
+func registerModelCatalogRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	models := admin.Group("/models/catalog")
+	{
+		models.GET("", h.Admin.ModelCatalog.List)
+		models.PUT("/:model_id/pricing", h.Admin.ModelCatalog.UpdatePricing)
+		models.POST("/reset", h.Admin.ModelCatalog.ResetPricing)
 	}
 }
 

@@ -232,6 +232,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/models',
+    name: 'ModelsCatalog',
+    component: () => import('@/views/user/ModelsCatalogView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Model Catalog',
+      titleKey: 'modelsCatalog.title',
+      descriptionKey: 'modelsCatalog.description'
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/ProfileView.vue'),
@@ -402,6 +414,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Group Management',
       titleKey: 'admin.groups.title',
       descriptionKey: 'admin.groups.description'
+    }
+  },
+  {
+    path: '/admin/models',
+    name: 'AdminModelsCatalog',
+    component: () => import('@/views/admin/AdminModelsCatalogView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Model Catalog Management',
+      titleKey: 'modelsCatalog.adminTitle',
+      descriptionKey: 'modelsCatalog.adminDescription'
     }
   },
   {

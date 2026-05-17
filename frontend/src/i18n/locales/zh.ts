@@ -361,6 +361,7 @@ export default {
     groups: '分组管理',
     channels: '渠道管理',
     availableChannels: '可用渠道',
+    modelCatalog: '模型广场',
     subscriptions: '订阅管理',
     accounts: '账号管理',
     proxies: 'IP管理',
@@ -997,6 +998,98 @@ export default {
       intervals: '阶梯定价',
       unitPerMillion: '/ 1M token',
       unitPerRequest: '/ 次'
+    }
+  },
+
+  modelsCatalog: {
+    kicker: '模型广场',
+    title: '模型广场',
+    adminTitle: '模型广场管理',
+    adminDescription: '管理全局模型基础价；渠道和分组定价仍保持最高优先级。',
+    description: '按供应商浏览当前站点支持的模型，查看统一展示价格与能力信息。',
+    priceMultiplierNote: '实际使用价格为当前页面价格乘以分组倍率',
+    searchPlaceholder: '搜索模型、供应商或标签...',
+    reset: '重置',
+    loadFailed: '模型广场加载失败',
+    copied: '模型 ID 已复制',
+    copyModel: '复制模型 ID',
+    allProviders: '全部供应商',
+    countSuffix: '/ {total} 个模型',
+    noDescription: '暂无描述',
+    priceUnavailable: '-',
+    sourceOfficial: '官方定价',
+    context: '上下文',
+    output: '输出',
+    error: {
+      title: '模型数据加载失败',
+      retry: '刷新重试'
+    },
+    admin: {
+      note: '价格按每 1M tokens 输入，并作为全局基础价覆盖参与真实计费。',
+      per1m: '每 1M tokens',
+      save: '保存',
+      saved: '模型定价已更新',
+      saveFailed: '模型定价更新失败',
+      resetAll: '恢复官方价',
+      resetDone: '已恢复官方默认价',
+      resetFailed: '恢复官方价失败',
+      override: '自定义定价',
+      nullPlaceholder: '留空'
+    },
+    filters: {
+      title: '筛选',
+      description: '按供应商、标签和价格字段过滤模型。',
+      providers: '供应商',
+      tags: '模型标签',
+      priceField: '价格字段'
+    },
+    priceMode: {
+      label: '价格模式',
+      standard: '标准',
+      cache: '缓存'
+    },
+    unit: {
+      label: '计价单位',
+      '1m': '/1M',
+      '1k': '/1K'
+    },
+    unitSuffix: {
+      '1m': '/ 1M',
+      '1k': '/ 1K'
+    },
+    sort: {
+      name: '名称',
+      input: '输入价',
+      output: '输出价',
+      context: '上下文'
+    },
+    priceFields: {
+      all: '全部',
+      input: '输入',
+      output: '输出',
+      cache: '缓存'
+    },
+    pricing: {
+      input: '输入',
+      output: '输出',
+      cacheWrite: '缓存写入',
+      cacheRead: '缓存读取'
+    },
+    tags: {
+      chat: '对话',
+      reasoning: '推理',
+      tools: '工具',
+      vision: '视觉',
+      thinking: '思考',
+      coding: '编程',
+      fast: '快速',
+      preview: '预览',
+      search: '搜索',
+      audio: '音频'
+    },
+    empty: {
+      title: '没有匹配的模型',
+      description: '试试调整筛选条件或清空搜索关键词。'
     }
   },
 
