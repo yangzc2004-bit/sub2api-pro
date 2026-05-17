@@ -83,7 +83,7 @@ func qwenClientSlotToIndex(name string) (int, bool) {
 	return n - 1, true
 }
 
-func qwenSlotValueToIndex(value interface{}) (int, bool) {
+func qwenSlotValueToIndex(value any) (int, bool) {
 	switch v := value.(type) {
 	case float64:
 		n := int(v)
@@ -116,10 +116,6 @@ func qwenSlotValueToIndex(value interface{}) (int, bool) {
 	default:
 		return 0, false
 	}
-}
-
-func qwenActionAliasForIndex(index int) string {
-	return fmt.Sprintf("A%02d", index+1)
 }
 
 func qwenActionAliasToIndex(name string) (int, bool) {
@@ -225,82 +221,6 @@ func buildQwenToolInstructionBlock(tools []apicompat.ChatTool) string {
 		return buildQwenShellScriptInstructionBlock()
 	}
 	return buildQwenActionInstructionBlock(tools)
-
-	var lines []string
-	lines = append(lines, "=== MANDATORY TOOL CALL INSTRUCTIONS ===")
-	lines = append(lines, "【重要】用户输入什么语言，就用什么语言回复。")
-	lines = append(lines, "")
-
-	// 收集工具名（已混淆）
-	var names []string
-	for _, t := range tools {
-		if t.Function != nil && t.Function.Name != "" {
-			names = append(names, toQwenToolName(t.Function.Name))
-		}
-	}
-	lines = append(lines, fmt.Sprintf("You have access to these tools: %s", strings.Join(names, ", ")))
-	lines = append(lines, "")
-	lines = append(lines, "Use tools only when they are necessary to directly answer the CURRENT TASK.")
-	lines = append(lines, "If you already know the answer, answer directly without any tool call.")
-	lines = append(lines, "Follow the current platform tool contract exactly.")
-	lines = append(lines, "Do not drift into Qwen-native or builtin tool-call formats, wrappers, tags, or argument schemas.")
-	lines = append(lines, "When the user asks to create, edit, read, run, search, fetch, or otherwise operate on local resources, emit a tool call instead of saying you cannot access the filesystem or environment.")
-	lines = append(lines, "")
-	lines = append(lines, "WHEN YOU NEED TO CALL A TOOL — output EXACTLY this format (nothing else):")
-	lines = append(lines, "##TOOL_CALL##")
-	lines = append(lines, `{"name": "EXACT_TOOL_NAME", "input": {"param1": "value1"}}`)
-	lines = append(lines, "##END_CALL##")
-	lines = append(lines, "")
-	lines = append(lines, "Rules:")
-	lines = append(lines, "- Output only the wrapper and JSON body.")
-	lines = append(lines, "- No prose before or after the wrapper.")
-	lines = append(lines, "- No markdown fences.")
-	lines = append(lines, "- No thinking tags.")
-	lines = append(lines, "- Use the exact tool name from the list above.")
-	lines = append(lines, "- Put arguments inside the input object.")
-	lines = append(lines, "- Do not invent tool names.")
-	lines = append(lines, "- If no tool is needed, answer normally.")
-	lines = append(lines, "")
-	lines = append(lines, "CRITICAL — ABSOLUTELY FORBIDDEN OUTPUTS:")
-	lines = append(lines, "- NEVER emit ANY disclaimer, error text, or availability complaint about tools.")
-	lines = append(lines, "- NEVER emit sentences claiming a tool is missing, unregistered, unavailable, or cannot be invoked.")
-	lines = append(lines, "- NEVER emit sentences claiming you are unable to execute a function or operate on files.")
-	lines = append(lines, "- The ##TOOL_CALL## blocks are TEXT MARKERS the client parses — they are NOT native function calls.")
-	lines = append(lines, "- If you feel a tool call could fail, emit the ##TOOL_CALL## anyway — the client handles failures.")
-	lines = append(lines, "")
-	lines = append(lines, "FORBIDDEN CALL FORMATS (will be blocked by server):")
-	lines = append(lines, `- {"name": "X", "arguments": "..."}  <-- NEVER USE`)
-	lines = append(lines, `- {"type": "function", "name": "X"}  <-- NEVER USE`)
-	lines = append(lines, `- {"type": "tool_use", "name": "X"}  <-- NEVER USE`)
-	lines = append(lines, `- <tool_call>{...}</tool_call>  <-- NEVER USE`)
-	lines = append(lines, `- Read({"file_path": "..."})  <-- NEVER USE`)
-	lines = append(lines, "ONLY ##TOOL_CALL##...##END_CALL## is accepted.")
-	lines = append(lines, "=== END TOOL INSTRUCTIONS ===")
-
-	// 工具列表详情
-	if len(tools) <= 15 {
-		lines = append(lines, "")
-		lines = append(lines, "Available tools:")
-		for _, t := range tools {
-			if t.Function == nil {
-				continue
-			}
-			name := toQwenToolName(t.Function.Name)
-			desc := strings.TrimSpace(t.Function.Description)
-			line := fmt.Sprintf("- %s", name)
-			if desc != "" {
-				line += fmt.Sprintf(": %s", desc)
-			}
-			// 添加参数签名提示
-			params := compactSchema(t.Function.Parameters)
-			if params != "" && params != "{}" {
-				line += fmt.Sprintf("\n  Params: %s", params)
-			}
-			lines = append(lines, line)
-		}
-	}
-
-	return strings.Join(lines, "\n")
 }
 
 func buildQwenShellScriptInstructionBlock() string {
@@ -395,16 +315,16 @@ func compactSchema(params json.RawMessage) string {
 	if len(params) == 0 {
 		return ""
 	}
-	var schema map[string]interface{}
+	var schema map[string]any
 	if err := json.Unmarshal(params, &schema); err != nil {
 		return ""
 	}
-	props, ok := schema["properties"].(map[string]interface{})
+	props, ok := schema["properties"].(map[string]any)
 	if !ok || len(props) == 0 {
 		return ""
 	}
 	requiredSet := make(map[string]bool)
-	if req, ok := schema["required"].([]interface{}); ok {
+	if req, ok := schema["required"].([]any); ok {
 		for _, r := range req {
 			if s, ok := r.(string); ok {
 				requiredSet[s] = true
@@ -501,18 +421,6 @@ func renderQwenHistoryMessageWithTools(msg apicompat.ChatMessage, tools []apicom
 	}
 }
 
-func qwenActionAliasForToolName(name string, tools []apicompat.ChatTool) string {
-	if name == "" {
-		return ""
-	}
-	for i, t := range tools {
-		if t.Function != nil && t.Function.Name == name {
-			return qwenActionAliasForIndex(i)
-		}
-	}
-	return ""
-}
-
 func qwenClientSlotForToolName(name string, tools []apicompat.ChatTool) string {
 	if name == "" {
 		return ""
@@ -574,7 +482,7 @@ func qwenShellCommandFromArguments(args string) string {
 	if args == "" {
 		return ""
 	}
-	var obj map[string]interface{}
+	var obj map[string]any
 	if err := json.Unmarshal([]byte(args), &obj); err == nil {
 		for _, key := range []string{"command", "cmd", "script"} {
 			if value, ok := obj[key].(string); ok {
@@ -677,7 +585,7 @@ func extractMessageText(content json.RawMessage) string {
 		return s
 	}
 	// 尝试作为数组解析（OpenAI content parts）
-	var parts []map[string]interface{}
+	var parts []map[string]any
 	if err := json.Unmarshal(content, &parts); err == nil {
 		var texts []string
 		for _, p := range parts {
@@ -716,7 +624,7 @@ var (
 // qwenParsedToolCall 表示从 Qwen 响应中解析出的工具调用。
 type qwenParsedToolCall struct {
 	Name  string
-	Input map[string]interface{}
+	Input map[string]any
 }
 
 // parseQwenToolCalls 从 Qwen 的文本响应中解析工具调用。
@@ -734,7 +642,7 @@ func parseQwenToolCalls(text string) (string, []qwenParsedToolCall, string) {
 			if script != "" {
 				toolCalls = append(toolCalls, qwenParsedToolCall{
 					Name:  qwenShellToolName,
-					Input: map[string]interface{}{"command": script},
+					Input: map[string]any{"command": script},
 				})
 			}
 		}
@@ -747,7 +655,7 @@ func parseQwenToolCalls(text string) (string, []qwenParsedToolCall, string) {
 	if prefix, script, ok := qwenExtractPowerShellTranscript(text); ok {
 		return prefix, []qwenParsedToolCall{{
 			Name:  qwenShellToolName,
-			Input: map[string]interface{}{"command": script},
+			Input: map[string]any{"command": script},
 		}}, "tool_calls"
 	}
 
@@ -914,7 +822,7 @@ func parseToolCallJSON(jsonStr string) *qwenParsedToolCall {
 		return nil
 	}
 
-	var obj map[string]interface{}
+	var obj map[string]any
 	if err := json.Unmarshal([]byte(jsonStr), &obj); err != nil {
 		return nil
 	}
@@ -931,7 +839,7 @@ func parseToolCallJSON(jsonStr string) *qwenParsedToolCall {
 		name = qwenClientSlotForIndex(idx)
 	} else if idx, ok := qwenSlotValueToIndex(obj["slot"]); ok {
 		name = qwenClientSlotForIndex(idx)
-	} else if n, ok := obj["function"].(map[string]interface{}); ok {
+	} else if n, ok := obj["function"].(map[string]any); ok {
 		if fn, ok := n["name"].(string); ok {
 			name = fn
 		}
@@ -940,23 +848,23 @@ func parseToolCallJSON(jsonStr string) *qwenParsedToolCall {
 		return nil
 	}
 
-	var input map[string]interface{}
-	if inp, ok := obj["input"].(map[string]interface{}); ok {
+	var input map[string]any
+	if inp, ok := obj["input"].(map[string]any); ok {
 		input = inp
 	} else if inp, ok := qwenMapFromJSONString(obj["input"]); ok {
 		input = inp
-	} else if args, ok := obj["arguments"].(map[string]interface{}); ok {
+	} else if args, ok := obj["arguments"].(map[string]any); ok {
 		input = args
 	} else if args, ok := qwenMapFromJSONString(obj["arguments"]); ok {
 		input = args
-	} else if args, ok := obj["args"].(map[string]interface{}); ok {
+	} else if args, ok := obj["args"].(map[string]any); ok {
 		input = args
 	} else if args, ok := qwenMapFromJSONString(obj["args"]); ok {
 		input = args
-	} else if params, ok := obj["parameters"].(map[string]interface{}); ok {
+	} else if params, ok := obj["parameters"].(map[string]any); ok {
 		input = params
-	} else if fn, ok := obj["function"].(map[string]interface{}); ok {
-		if args, ok := fn["arguments"].(map[string]interface{}); ok {
+	} else if fn, ok := obj["function"].(map[string]any); ok {
+		if args, ok := fn["arguments"].(map[string]any); ok {
 			input = args
 		} else if args, ok := qwenMapFromJSONString(fn["arguments"]); ok {
 			input = args
@@ -980,7 +888,7 @@ func parseToolCallJSONList(jsonStr string) []qwenParsedToolCall {
 	if jsonStr == "" {
 		return nil
 	}
-	var obj map[string]interface{}
+	var obj map[string]any
 	if err := json.Unmarshal([]byte(jsonStr), &obj); err == nil {
 		if calls := qwenToolCallsFromObject(obj); len(calls) > 0 {
 			return calls
@@ -990,7 +898,7 @@ func parseToolCallJSONList(jsonStr string) []qwenParsedToolCall {
 		}
 		return nil
 	}
-	var arr []map[string]interface{}
+	var arr []map[string]any
 	if err := json.Unmarshal([]byte(jsonStr), &arr); err != nil {
 		return nil
 	}
@@ -1004,14 +912,14 @@ func parseToolCallJSONList(jsonStr string) []qwenParsedToolCall {
 	return result
 }
 
-func qwenToolCallsFromObject(obj map[string]interface{}) []qwenParsedToolCall {
-	raw, ok := obj["tool_calls"].([]interface{})
+func qwenToolCallsFromObject(obj map[string]any) []qwenParsedToolCall {
+	raw, ok := obj["tool_calls"].([]any)
 	if !ok {
 		return nil
 	}
 	result := make([]qwenParsedToolCall, 0, len(raw))
 	for _, item := range raw {
-		itemObj, ok := item.(map[string]interface{})
+		itemObj, ok := item.(map[string]any)
 		if !ok {
 			continue
 		}
@@ -1023,7 +931,7 @@ func qwenToolCallsFromObject(obj map[string]interface{}) []qwenParsedToolCall {
 	return result
 }
 
-func qwenMapFromJSONString(value interface{}) (map[string]interface{}, bool) {
+func qwenMapFromJSONString(value any) (map[string]any, bool) {
 	raw, ok := value.(string)
 	if !ok {
 		return nil, false
@@ -1032,15 +940,15 @@ func qwenMapFromJSONString(value interface{}) (map[string]interface{}, bool) {
 	if raw == "" {
 		return nil, false
 	}
-	var obj map[string]interface{}
+	var obj map[string]any
 	if err := json.Unmarshal([]byte(raw), &obj); err != nil {
 		return nil, false
 	}
 	return obj, true
 }
 
-func qwenTopLevelArguments(obj map[string]interface{}) map[string]interface{} {
-	input := make(map[string]interface{})
+func qwenTopLevelArguments(obj map[string]any) map[string]any {
+	input := make(map[string]any)
 	for key, value := range obj {
 		switch key {
 		case "name", "type", "id", "index", "slot", "n", "function", "tool_calls", "input", "arguments", "args", "parameters":
@@ -1049,7 +957,7 @@ func qwenTopLevelArguments(obj map[string]interface{}) map[string]interface{} {
 		input[key] = value
 	}
 	if len(input) == 0 {
-		return make(map[string]interface{})
+		return make(map[string]any)
 	}
 	return input
 }
@@ -1089,8 +997,8 @@ func qwenToolCallsToOpenAI(toolCalls []qwenParsedToolCall, allowedTools ...[]api
 	return result
 }
 
-func qwenPrepareToolInputForClient(tc qwenParsedToolCall, name string, tools []apicompat.ChatTool) map[string]interface{} {
-	input := make(map[string]interface{}, len(tc.Input)+1)
+func qwenPrepareToolInputForClient(tc qwenParsedToolCall, name string, tools []apicompat.ChatTool) map[string]any {
+	input := make(map[string]any, len(tc.Input)+1)
 	for key, value := range tc.Input {
 		input[key] = value
 	}
@@ -1102,7 +1010,7 @@ func qwenPrepareToolInputForClient(tc qwenParsedToolCall, name string, tools []a
 	return input
 }
 
-func qwenShellDescription(input map[string]interface{}) string {
+func qwenShellDescription(input map[string]any) string {
 	command, _ := input["command"].(string)
 	command = strings.TrimSpace(command)
 	switch {
@@ -1203,91 +1111,10 @@ func qwenToolAliasKey(value string) string {
 	b.Grow(len(value))
 	for _, r := range value {
 		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
-			b.WriteRune(r)
+			_, _ = b.WriteRune(r)
 		}
 	}
 	return b.String()
-}
-
-// ---------------------------------------------------------------------------
-// 流式工具调用检测器 (ToolSieve)
-// ---------------------------------------------------------------------------
-
-// qwenToolSieve 用于流式响应中实时检测工具调用标记。
-type qwenToolSieve struct {
-	toolNames          map[string]bool
-	buffer             strings.Builder
-	inToolCall         bool
-	toolCallStartIndex int
-	detectedToolCalls  []qwenParsedToolCall
-	hasToolCalls       bool
-}
-
-// newQwenToolSieve 创建新的流式工具调用检测器。
-func newQwenToolSieve(tools []apicompat.ChatTool) *qwenToolSieve {
-	names := make(map[string]bool)
-	for _, t := range tools {
-		if t.Function != nil && t.Function.Name != "" {
-			names[t.Function.Name] = true
-		}
-	}
-	return &qwenToolSieve{toolNames: names}
-}
-
-// processChunk 处理一个文本 chunk，返回 (普通文本, 是否检测到工具调用)。
-// 注意：流式场景下工具调用通常在完整响应后才能可靠解析，所以这里做简单检测，
-// 最终解析在 finish 时完成。
-func (s *qwenToolSieve) processChunk(chunk string) (string, bool) {
-	if chunk == "" {
-		return "", false
-	}
-	s.buffer.WriteString(chunk)
-	current := s.buffer.String()
-
-	// 如果已经检测到工具调用，不再输出普通文本
-	if s.hasToolCalls {
-		return "", true
-	}
-
-	// 检测是否包含工具调用标记
-	if strings.Contains(current, "##TOOL_CALL##") ||
-		strings.Contains(current, "<tool_call>") ||
-		strings.Contains(current, "```tool_call") {
-		// 尝试解析完整响应
-		prefix, toolCalls, finishReason := parseQwenToolCalls(current)
-		if finishReason == "tool_calls" && len(toolCalls) > 0 {
-			s.detectedToolCalls = toolCalls
-			s.hasToolCalls = true
-			// 清空 buffer，返回前缀文本（如果有）
-			s.buffer.Reset()
-			return prefix, true
-		}
-	}
-
-	// 还没有完整工具调用，安全地输出部分文本
-	// 保留最后 50 个字符不输出，以防工具调用标记被截断
-	bufStr := s.buffer.String()
-	if len(bufStr) > 50 {
-		safeOutput := bufStr[:len(bufStr)-50]
-		s.buffer.Reset()
-		s.buffer.WriteString(bufStr[len(bufStr)-50:])
-		return safeOutput, false
-	}
-
-	return "", false
-}
-
-// flush 刷新剩余内容，返回最终解析结果。
-func (s *qwenToolSieve) flush() (string, []qwenParsedToolCall, bool) {
-	bufStr := s.buffer.String()
-	if bufStr == "" {
-		return "", nil, false
-	}
-	prefix, toolCalls, finishReason := parseQwenToolCalls(bufStr)
-	if finishReason == "tool_calls" && len(toolCalls) > 0 {
-		return prefix, toolCalls, true
-	}
-	return bufStr, nil, false
 }
 
 // ---------------------------------------------------------------------------
@@ -1334,7 +1161,7 @@ func ConvertAnthropicToChatCompletions(body []byte) ([]byte, error) {
 	}
 
 	// 构建 OpenAI 请求体
-	openaiReq := map[string]interface{}{
+	openaiReq := map[string]any{
 		"model":  anthropicReq.Model,
 		"stream": anthropicReq.Stream,
 	}
@@ -1407,13 +1234,13 @@ func ConvertAnthropicToChatCompletions(body []byte) ([]byte, error) {
 			openaiMsg.Content = json.RawMessage(strconv.Quote(textContent))
 		} else if err := json.Unmarshal(msg.Content, &contentBlocks); err == nil {
 			// 数组 content（可能包含 text、tool_use、tool_result）
-			var contentParts []map[string]interface{}
+			var contentParts []map[string]any
 			var toolCalls []apicompat.ChatToolCall
 
 			for _, block := range contentBlocks {
 				switch block.Type {
 				case "text":
-					contentParts = append(contentParts, map[string]interface{}{
+					contentParts = append(contentParts, map[string]any{
 						"type": "text",
 						"text": block.Text,
 					})
@@ -1423,9 +1250,9 @@ func ConvertAnthropicToChatCompletions(body []byte) ([]byte, error) {
 						if mediaType == "" {
 							mediaType = "image/png"
 						}
-						contentParts = append(contentParts, map[string]interface{}{
+						contentParts = append(contentParts, map[string]any{
 							"type": "image_url",
-							"image_url": map[string]interface{}{
+							"image_url": map[string]any{
 								"url": "data:" + mediaType + ";base64," + strings.TrimSpace(block.Source.Data),
 							},
 						})
@@ -1443,10 +1270,10 @@ func ConvertAnthropicToChatCompletions(body []byte) ([]byte, error) {
 						if filename == "" {
 							filename = "document.pdf"
 						}
-						contentParts = append(contentParts, map[string]interface{}{
+						contentParts = append(contentParts, map[string]any{
 							"type":     "file",
 							"filename": filename,
-							"source": map[string]interface{}{
+							"source": map[string]any{
 								"type":       "base64",
 								"media_type": mediaType,
 								"data":       strings.TrimSpace(block.Source.Data),

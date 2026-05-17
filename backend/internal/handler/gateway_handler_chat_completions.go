@@ -220,13 +220,14 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 			forwardBody = h.gatewayService.ReplaceModelInBody(body, channelMapping.MappedModel)
 		}
 		var result *service.ForwardResult
-		if account.Platform == service.PlatformKimi {
+		switch account.Platform {
+		case service.PlatformKimi:
 			result, err = h.gatewayService.ForwardKimiChatCompletions(c.Request.Context(), c, account, forwardBody)
-		} else if account.Platform == service.PlatformMimo {
+		case service.PlatformMimo:
 			result, err = h.gatewayService.ForwardMimoChatCompletions(c.Request.Context(), c, account, forwardBody)
-		} else if account.Platform == service.PlatformQwen {
+		case service.PlatformQwen:
 			result, err = h.gatewayService.ForwardQwenChatCompletions(c.Request.Context(), c, account, forwardBody)
-		} else {
+		default:
 			result, err = h.gatewayService.ForwardAsChatCompletions(c.Request.Context(), c, account, forwardBody, parsedReq)
 		}
 

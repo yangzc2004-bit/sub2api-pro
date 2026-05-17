@@ -58,14 +58,6 @@ var (
 		Mode:                    "chat",
 		SupportsPromptCaching:   true,
 	}
-	mimoFallbackPricing = &LiteLLMModelPricing{
-		InputCostPerToken:       0,
-		OutputCostPerToken:      0,
-		CacheReadInputTokenCost: 0,
-		LiteLLMProvider:         "mimo",
-		Mode:                    "chat",
-		SupportsPromptCaching:   true,
-	}
 	mimoProFallbackPricing = &LiteLLMModelPricing{
 		InputCostPerToken:       8.6e-06, // 8.60 site credits per MTok
 		OutputCostPerToken:      2.6e-05, // 26.00 site credits per MTok

@@ -595,11 +595,11 @@ func TestQwenToolCallsToOpenAI(t *testing.T) {
 	toolCalls := []qwenParsedToolCall{
 		{
 			Name:  "Read",
-			Input: map[string]interface{}{"file_path": "/etc/hosts"},
+			Input: map[string]any{"file_path": "/etc/hosts"},
 		},
 		{
 			Name:  "Write",
-			Input: map[string]interface{}{"file_path": "/tmp/test.txt", "content": "hello"},
+			Input: map[string]any{"file_path": "/tmp/test.txt", "content": "hello"},
 		},
 	}
 
@@ -635,11 +635,11 @@ func TestQwenToolCallsToOpenAINormalizesOpenCodeToolNames(t *testing.T) {
 		{Type: "function", Function: &apicompat.ChatFunction{Name: "bash"}},
 	}
 	toolCalls := []qwenParsedToolCall{
-		{Name: "u_write", Input: map[string]interface{}{"file_path": "tool_call_success.txt", "content": "ok"}},
-		{Name: "fs_put_file", Input: map[string]interface{}{"file_path": "legacy.txt", "content": "ok"}},
-		{Name: "oc_shell_run", Input: map[string]interface{}{"command": "pwd"}},
-		{Name: "A01", Input: map[string]interface{}{"file_path": "numbered.txt", "content": "ok"}},
-		{Name: "__qwen_slot_2", Input: map[string]interface{}{"command": "echo ok"}},
+		{Name: "u_write", Input: map[string]any{"file_path": "tool_call_success.txt", "content": "ok"}},
+		{Name: "fs_put_file", Input: map[string]any{"file_path": "legacy.txt", "content": "ok"}},
+		{Name: "oc_shell_run", Input: map[string]any{"command": "pwd"}},
+		{Name: "A01", Input: map[string]any{"file_path": "numbered.txt", "content": "ok"}},
+		{Name: "__qwen_slot_2", Input: map[string]any{"command": "echo ok"}},
 	}
 
 	openaiToolCalls := qwenToolCallsToOpenAI(toolCalls, tools)
@@ -670,9 +670,9 @@ func TestQwenToolCallsToOpenAIDropsUnknownToolNamesWhenToolsProvided(t *testing.
 		{Type: "function", Function: &apicompat.ChatFunction{Name: "write"}},
 	}
 	toolCalls := []qwenParsedToolCall{
-		{Name: "client_operation", Input: map[string]interface{}{"file_path": "bad.txt"}},
-		{Name: "write_file", Input: map[string]interface{}{"file_path": "bad.txt"}},
-		{Name: "__qwen_slot_1", Input: map[string]interface{}{"file_path": "ok.txt", "content": "ok"}},
+		{Name: "client_operation", Input: map[string]any{"file_path": "bad.txt"}},
+		{Name: "write_file", Input: map[string]any{"file_path": "bad.txt"}},
+		{Name: "__qwen_slot_1", Input: map[string]any{"file_path": "ok.txt", "content": "ok"}},
 	}
 
 	openaiToolCalls := qwenToolCallsToOpenAI(toolCalls, tools)
@@ -691,7 +691,7 @@ func TestQwenToolCallsToOpenAINormalizesShellScriptMarker(t *testing.T) {
 		{Type: "function", Function: &apicompat.ChatFunction{Name: "bash"}},
 	}
 	toolCalls := []qwenParsedToolCall{
-		{Name: qwenShellToolName, Input: map[string]interface{}{"command": "Get-Location"}},
+		{Name: qwenShellToolName, Input: map[string]any{"command": "Get-Location"}},
 	}
 
 	openaiToolCalls := qwenToolCallsToOpenAI(toolCalls, tools)

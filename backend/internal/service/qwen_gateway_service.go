@@ -352,7 +352,7 @@ func (s *GatewayService) streamQwenChatCompletions(
 				if hasTools {
 					// 缓冲文本内容，用于后续工具调用检测
 					if text := qwenContentFromPayload(trimmedPayload); text != "" {
-						textBuffer.WriteString(text)
+						_, _ = textBuffer.WriteString(text)
 					}
 					if u := qwenUsageFromPayload(trimmedPayload); u != nil {
 						usage = *u
@@ -447,7 +447,9 @@ func (s *GatewayService) flushQwenStreamToolCalls(
 				},
 			}
 			if sse, err := apicompat.ChatChunkToSSE(contentChunk); err == nil {
-				c.Writer.WriteString(sse)
+				if _, err := c.Writer.WriteString(sse); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -466,7 +468,9 @@ func (s *GatewayService) flushQwenStreamToolCalls(
 			},
 		}
 		if sse, err := apicompat.ChatChunkToSSE(toolChunk); err == nil {
-			c.Writer.WriteString(sse)
+			if _, err := c.Writer.WriteString(sse); err != nil {
+				return err
+			}
 		}
 	} else {
 		// 无工具调用，作为普通文本输出
@@ -487,7 +491,9 @@ func (s *GatewayService) flushQwenStreamToolCalls(
 				},
 			}
 			if sse, err := apicompat.ChatChunkToSSE(contentChunk); err == nil {
-				c.Writer.WriteString(sse)
+				if _, err := c.Writer.WriteString(sse); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -507,11 +513,15 @@ func (s *GatewayService) flushQwenStreamToolCalls(
 			},
 		}
 		if sse, err := apicompat.ChatChunkToSSE(usageChunk); err == nil {
-			c.Writer.WriteString(sse)
+			if _, err := c.Writer.WriteString(sse); err != nil {
+				return err
+			}
 		}
 	}
 
-	c.Writer.WriteString("data: [DONE]\n\n")
+	if _, err := c.Writer.WriteString("data: [DONE]\n\n"); err != nil {
+		return err
+	}
 	c.Writer.Flush()
 	return nil
 }
@@ -746,9 +756,9 @@ func qwenJoinTextParts(parts []gjson.Result) string {
 			continue
 		}
 		if builder.Len() > 0 {
-			builder.WriteString("\n")
+			_, _ = builder.WriteString("\n")
 		}
-		builder.WriteString(text)
+		_, _ = builder.WriteString(text)
 	}
 	return builder.String()
 }
@@ -940,9 +950,9 @@ func qwenStringFromAny(value any) string {
 	switch v := value.(type) {
 	case string:
 		return v
-	case fmt.Stringer:
-		return v.String()
 	case json.Number:
+		return v.String()
+	case fmt.Stringer:
 		return v.String()
 	default:
 		return ""
@@ -1078,26 +1088,6 @@ type qwenSTSFileToken struct {
 	AccessKeyID     string `json:"access_key_id"`
 	AccessKeySecret string `json:"access_key_secret"`
 	SecurityToken   string `json:"security_token"`
-}
-
-func (s *GatewayService) prepareQwenUpstreamFiles(
-	ctx context.Context,
-	c *gin.Context,
-	account *Account,
-	baseURL string,
-	authToken string,
-	cookie string,
-	midtoken string,
-	messages []apicompat.ChatMessage,
-) ([]map[string]any, error) {
-	attachments, err := s.collectQwenAttachments(ctx, c, account, messages)
-	if err != nil {
-		return nil, err
-	}
-	if len(attachments) == 0 {
-		return nil, nil
-	}
-	return s.uploadQwenAttachments(ctx, c, account, baseURL, authToken, cookie, midtoken, attachments)
 }
 
 func (s *GatewayService) uploadQwenAttachments(
@@ -1619,45 +1609,6 @@ func qwenOSSObjectTarget(sts qwenSTSFileToken) (string, string, error) {
 	return target, region, nil
 }
 
-func (s *GatewayService) verifyQwenOSSObject(ctx context.Context, account *Account, sts qwenSTSFileToken, attachment qwenLocalAttachment) error {
-	target, region, err := qwenOSSObjectTarget(sts)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, target, nil)
-	if err != nil {
-		return err
-	}
-	if attachment.ContentType != "" {
-		req.Header.Set("Content-Type", attachment.ContentType)
-	}
-	req.Header.Set("x-oss-security-token", sts.SecurityToken)
-	req.Header.Set("x-oss-content-sha256", "UNSIGNED-PAYLOAD")
-	qwenSignOSSV4Request(req, sts, region)
-
-	resp, err := s.doQwenOSSRequest(ctx, account, req)
-	if err != nil {
-		return fmt.Errorf("qwen OSS verify failed: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
-		return fmt.Errorf("qwen OSS verify failed: HTTP %d %s", resp.StatusCode, sanitizeUpstreamErrorMessage(string(body)))
-	}
-	got := resp.ContentLength
-	if got < 0 {
-		got, _ = strconv.ParseInt(strings.TrimSpace(resp.Header.Get("Content-Length")), 10, 64)
-	}
-	want := int64(len(attachment.Data))
-	if got == 0 && want > 0 {
-		return fmt.Errorf("qwen OSS verify failed: uploaded object is empty, want %d bytes file_id=%s object=%s", want, sts.FileID, strings.TrimPrefix(sts.FilePath, "/"))
-	}
-	if got > 0 && got != want {
-		return fmt.Errorf("qwen OSS verify failed: uploaded object size=%d, want %d file_id=%s object=%s", got, want, sts.FileID, strings.TrimPrefix(sts.FilePath, "/"))
-	}
-	return nil
-}
-
 func (s *GatewayService) doQwenOSSRequest(ctx context.Context, account *Account, req *http.Request) (*http.Response, error) {
 	proxyURL := ""
 	accountID := int64(0)
@@ -1798,10 +1749,10 @@ func qwenCanonicalOSSHeaders(req *http.Request) string {
 	sort.Strings(keys)
 	var builder strings.Builder
 	for _, key := range keys {
-		builder.WriteString(key)
-		builder.WriteByte(':')
-		builder.WriteString(headers[key])
-		builder.WriteByte('\n')
+		_, _ = builder.WriteString(key)
+		_ = builder.WriteByte(':')
+		_, _ = builder.WriteString(headers[key])
+		_ = builder.WriteByte('\n')
 	}
 	return builder.String()
 }
@@ -2172,7 +2123,7 @@ func qwenTextFromPayloadResult(result gjson.Result) string {
 			if text == "" {
 				continue
 			}
-			builder.WriteString(text)
+			_, _ = builder.WriteString(text)
 		}
 		return builder.String()
 	}
