@@ -15,7 +15,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// TestShouldFailoverGeminiUpstreamError — verifies the failover decision
+// TestShouldFailoverGeminiUpstreamError 鈥?verifies the failover decision
 // for the ErrorPolicyNone path (original logic preserved).
 // ---------------------------------------------------------------------------
 
@@ -48,7 +48,7 @@ func TestShouldFailoverGeminiUpstreamError(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// TestCheckErrorPolicy_GeminiAccounts — verifies CheckErrorPolicy works
+// TestCheckErrorPolicy_GeminiAccounts 鈥?verifies CheckErrorPolicy works
 // correctly for Gemini platform accounts (API Key type).
 // ---------------------------------------------------------------------------
 
@@ -181,7 +181,7 @@ func TestCheckErrorPolicy_GeminiAccounts(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// TestGeminiErrorPolicyIntegration — verifies the Gemini error handling
+// TestGeminiErrorPolicyIntegration 鈥?verifies the Gemini error handling
 // paths produce the correct behavior for each ErrorPolicyResult.
 //
 // These tests simulate the inline error policy switch in handleClaudeCompat
@@ -308,7 +308,7 @@ func TestGeminiErrorPolicyIntegration(t *testing.T) {
 			if svc.rateLimitService != nil {
 				switch svc.rateLimitService.CheckErrorPolicy(ctx, account, statusCode, respBody) {
 				case ErrorPolicySkipped:
-					// Skipped → return error directly (no handleGeminiUpstreamError, no failover)
+					// Skipped 鈫?return error directly (no handleGeminiUpstreamError, no failover)
 					gotFailover = false
 					handleErrorCalled = false
 					goto verify
@@ -320,7 +320,7 @@ func TestGeminiErrorPolicyIntegration(t *testing.T) {
 				}
 			}
 
-			// ErrorPolicyNone → original logic
+			// ErrorPolicyNone 鈫?original logic
 			svc.handleGeminiUpstreamError(ctx, account, statusCode, headers, respBody)
 			handleErrorCalled = true
 			if svc.shouldFailoverGeminiUpstreamError(statusCode) {
@@ -340,7 +340,7 @@ func TestGeminiErrorPolicyIntegration(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// TestGeminiErrorPolicy_NilRateLimitService — verifies nil safety
+// TestGeminiErrorPolicy_NilRateLimitService 鈥?verifies nil safety
 // ---------------------------------------------------------------------------
 
 func TestGeminiErrorPolicy_NilRateLimitService(t *testing.T) {
@@ -348,7 +348,7 @@ func TestGeminiErrorPolicy_NilRateLimitService(t *testing.T) {
 		rateLimitService: nil,
 	}
 
-	// When rateLimitService is nil, error policy is skipped → falls through to
+	// When rateLimitService is nil, error policy is skipped 鈫?falls through to
 	// shouldFailoverGeminiUpstreamError (original logic).
 	// Verify this doesn't panic and follows expected behavior.
 
@@ -408,11 +408,6 @@ func TestHandleGeminiUpstreamError_GoogleOneCapacityExhaustedUsesTierCooldown(t 
 	require.True(t, repo.lastRateLimitReset.After(before))
 	require.True(t, repo.lastRateLimitReset.Before(after.Add(5*time.Minute).Add(2*time.Second)))
 }
-
-// ---------------------------------------------------------------------------
-// geminiErrorPolicyRepo — minimal AccountRepository stub for Gemini error
-// policy tests. Embeds mockAccountRepoForGemini and adds tracking.
-// ---------------------------------------------------------------------------
 
 type geminiErrorPolicyRepo struct {
 	mockAccountRepoForGemini

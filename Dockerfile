@@ -24,7 +24,7 @@ WORKDIR /app/frontend
 # the temporary swap configured during low-memory server builds.
 ENV NODE_OPTIONS=--max-old-space-size=1536
 
-# Install pnpm
+# Install pnpm (pinned to v9 to match CI and keep builds reproducible)
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # Install dependencies first (better caching)

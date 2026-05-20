@@ -89,12 +89,18 @@ func TestModelCatalogDefaults_DeepSeekAndCachePrices(t *testing.T) {
 
 	requireCatalogPrice(t, byModel["deepseek-v4-flash"], 1.15, 2.5, 1.15, 0.03)
 	requireCatalogPrice(t, byModel["deepseek-v4-pro"], 4, 7.5, 4, 0.035)
+	require.Equal(t, 1000000, byModel["deepseek-v4-flash"].ContextTokens)
+	require.Equal(t, 1000000, byModel["deepseek-v4-pro"].ContextTokens)
 	requireCatalogPrice(t, byModel["gpt-5.5"], 5, 30, 5, 0.5)
 	requireCatalogPrice(t, byModel["gemini-3.1-pro-high"], 2, 12, 2, 0.2)
 	requireCatalogPrice(t, byModel["kimi-k2.6-full"], 4, 16, 4, 0.8)
 	requireCatalogPrice(t, byModel["kimi-for-coding"], 2, 8, 2, 0.4)
 	requireCatalogPrice(t, byModel["mimo-v2.5-pro"], 4, 16, 4, 0.8)
 	requireCatalogPrice(t, byModel["mimo-v2-flash"], 0.8, 2.4, 0.8, 0.16)
+	require.Equal(t, 1000000, byModel["mimo-v2.5-pro"].ContextTokens)
+	require.Equal(t, 1000000, byModel["mimo-v2.5"].ContextTokens)
+	require.Equal(t, 256000, byModel["mimo-v2-omni"].ContextTokens)
+	require.Equal(t, 256000, byModel["mimo-v2-flash"].ContextTokens)
 }
 
 func TestModelPricingResolver_UsesCatalogOverrideBeforeLiteLLM(t *testing.T) {

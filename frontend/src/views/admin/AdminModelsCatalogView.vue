@@ -140,7 +140,7 @@
                 </span>
               </header>
 
-              <p class="model-description">{{ item.model.description || t('modelsCatalog.noDescription') }}</p>
+              <p class="model-description">{{ modelDescription(item.model) }}</p>
 
               <div class="tag-row">
                 <span v-for="tag in item.model.tags" :key="tag" class="tag-pill">{{ formatTag(tag) }}</span>
@@ -213,7 +213,7 @@ interface CatalogModelItem {
 
 type PriceDraft = Record<PriceKey, string>
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const appStore = useAppStore()
 
 const providers = ref<ModelCatalogProvider[]>([])
@@ -263,7 +263,7 @@ const filteredModels = computed(() => {
       item.provider.display_name,
       item.model.id,
       item.model.name,
-      item.model.description,
+      modelDescription(item.model),
       ...item.model.tags,
     ].join(' ').toLowerCase().includes(q)
   })
@@ -357,6 +357,12 @@ function sourceLabel(source: string): string {
 
 function formatTag(tag: string): string {
   return t(`modelsCatalog.tags.${tag}`, tag)
+}
+
+function modelDescription(model: ModelCatalogModel): string {
+  const key = `modelsCatalog.modelDescriptions.${model.id}`
+  const translated = te(key) ? t(key) : ''
+  return translated || model.description || t('modelsCatalog.noDescription')
 }
 
 function formatTokenCount(value: number): string {

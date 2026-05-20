@@ -201,8 +201,8 @@ func defaultModelCatalogProviders() []ModelCatalogProvider {
 			DisplayName: "DeepSeek",
 			LogoKey:     "deepseek",
 			Models: []ModelCatalogModel{
-				catalogModel("deepseek-v4-flash", "DeepSeek V4 Flash", "DeepSeek V4 fast profile for general chat, coding and extraction.", []string{"chat", "coding", "fast"}, 131072, 8192, modelCatalogPricingOf(1.15, 2.5, 1.15, 0.03)),
-				catalogModel("deepseek-v4-pro", "DeepSeek V4 Pro", "DeepSeek V4 reasoning profile for complex problem solving and coding tasks.", []string{"chat", "reasoning", "coding"}, 131072, 65536, modelCatalogPricingOf(4, 7.5, 4, 0.035)),
+				catalogModel("deepseek-v4-flash", "DeepSeek V4 Flash", "DeepSeek V4 fast profile for general chat, coding and extraction.", []string{"chat", "coding", "fast"}, 1000000, 8192, modelCatalogPricingOf(1.15, 2.5, 1.15, 0.03)),
+				catalogModel("deepseek-v4-pro", "DeepSeek V4 Pro", "DeepSeek V4 reasoning profile for complex problem solving and coding tasks.", []string{"chat", "reasoning", "coding"}, 1000000, 65536, modelCatalogPricingOf(4, 7.5, 4, 0.035)),
 			},
 		},
 		{
@@ -223,10 +223,10 @@ func defaultModelCatalogProviders() []ModelCatalogProvider {
 			DisplayName: "MiMo",
 			LogoKey:     "mimo",
 			Models: []ModelCatalogModel{
-				catalogModel("mimo-v2.5-pro", "MiMo 2.5 Pro", "MiMo flagship profile for OpenAI-compatible and Anthropic-compatible requests.", []string{"chat", "reasoning", "tools"}, 256000, 64000, modelCatalogPricingOf(4, 16, 4, 0.8)),
-				catalogModel("mimo-v2.5", "MiMo 2.5", "Balanced MiMo model for daily chat, coding and API conversion workflows.", []string{"chat", "coding", "tools"}, 128000, 32000, modelCatalogPricingOf(2, 8, 2, 0.4)),
-				catalogModel("mimo-v2-omni", "MiMo Omni", "MiMo multimodal model for mixed media understanding and chat.", []string{"chat", "vision", "audio"}, 128000, 32000, modelCatalogPricingOf(2, 8, 2, 0.4)),
-				catalogModel("mimo-v2-flash", "MiMo Flash", "Fast MiMo model for lightweight prompts and low-latency routing.", []string{"chat", "fast"}, 64000, 16000, modelCatalogPricingOf(0.8, 2.4, 0.8, 0.16)),
+				catalogModel("mimo-v2.5-pro", "MiMo 2.5 Pro", "MiMo flagship profile for OpenAI-compatible and Anthropic-compatible requests.", []string{"chat", "reasoning", "tools"}, 1000000, 64000, modelCatalogPricingOf(4, 16, 4, 0.8)),
+				catalogModel("mimo-v2.5", "MiMo 2.5", "Balanced MiMo model for daily chat, coding and API conversion workflows.", []string{"chat", "coding", "tools"}, 1000000, 32000, modelCatalogPricingOf(2, 8, 2, 0.4)),
+				catalogModel("mimo-v2-omni", "MiMo Omni", "MiMo multimodal model for mixed media understanding and chat.", []string{"chat", "vision", "audio"}, 256000, 32000, modelCatalogPricingOf(2, 8, 2, 0.4)),
+				catalogModel("mimo-v2-flash", "MiMo Flash", "Fast MiMo model for lightweight prompts and low-latency routing.", []string{"chat", "fast"}, 256000, 16000, modelCatalogPricingOf(0.8, 2.4, 0.8, 0.16)),
 			},
 		},
 	}
