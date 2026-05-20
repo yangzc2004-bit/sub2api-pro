@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -343,6 +344,7 @@ func compactSchema(params json.RawMessage) string {
 	if len(parts) == 0 {
 		return ""
 	}
+	sort.Strings(parts)
 	return fmt.Sprintf("{%s}", strings.Join(parts, ", "))
 }
 
