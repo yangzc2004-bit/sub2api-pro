@@ -528,13 +528,24 @@ func compareVersions(current, latest string) int {
 }
 
 func parseVersion(v string) [3]int {
-	v = strings.TrimPrefix(v, "v")
+	v = strings.TrimSpace(v)
+	v = strings.TrimPrefix(strings.TrimPrefix(v, "v"), "V")
 	parts := strings.Split(v, ".")
 	result := [3]int{0, 0, 0}
 	for i := 0; i < len(parts) && i < 3; i++ {
-		if parsed, err := strconv.Atoi(parts[i]); err == nil {
+		if parsed, err := strconv.Atoi(leadingDigits(parts[i])); err == nil {
 			result[i] = parsed
 		}
 	}
 	return result
+}
+
+func leadingDigits(s string) string {
+	s = strings.TrimSpace(s)
+	for i, r := range s {
+		if r < '0' || r > '9' {
+			return s[:i]
+		}
+	}
+	return s
 }
