@@ -27,8 +27,8 @@ import (
 // Codex upstreams reject with "Unsupported parameter: ...". They must be
 // stripped when forwarding a raw client body through the Responses-shape
 // short-circuit in ForwardAsChatCompletions (see isResponsesShape branch).
-// The normal Chat Completions 閳?Responses conversion path is unaffected
-// because ChatCompletionsRequest has no fields for these parameters 閳?unknown
+// The normal Chat Completions to Responses conversion path is unaffected
+// because ChatCompletionsRequest has no fields for these parameters. Unknown
 // fields are dropped naturally by json.Unmarshal. Kept semantically in sync
 // with the list in openai_gateway_service.go:2034 used by the /v1/responses
 // passthrough path.
@@ -43,12 +43,9 @@ var cursorResponsesUnsupportedFields = []string{
 // to OpenAI Responses API format, forwards to the OpenAI upstream, and converts
 // the response back to Chat Completions format.
 //
-// 閸樺棗褰堕懗灞炬珯閿涙俺顕氶崙鑺ユ殶閸樼喐婀扮€佃澧嶉張?OpenAI 鐠愶箑褰块弮鐘叉▕閸掝偉铔?CC閳壊esponses 鏉烆剚宕?+ /v1/responses
-// 缁旑垳鍋ｉ垾鏂衡偓鏃囩箹閸?OAuth閿涘湑hatGPT 閸愬懘鍎?API 娴犲懏鏁幐?Responses閿涘鎷扮€规ɑ鏌?APIKey 鐠愶箑褰挎稉濠冩Ц
-// 濮濓絿鈥橀惃鍕剁礉娴?sub2api 閹恒儱鍙?DeepSeek/Kimi/GLM 缁涘顑囨稉澶嬫煙 OpenAI 閸忕厧顔愭稉濠冪埗閸氬骸浜ｇ拋鍓х壃鐟佸偊绱?// 鏉╂瑤绨烘稉濠冪埗閺咁噣浜堕崣顏呮暜閹?/v1/chat/completions閿涘本妫?/v1/responses 缁旑垳鍋ｉ妴?//
-// 瑜版挸澧犵捄顖滄暠缁涙牜鏆愰敍鍫濈唨娴滃氦澶勯崣鐤洬閻╂牗膩瀵?閹恒垺绁撮弽鍥唶閿涘矁顕涚憴?openai_compat.ShouldUseResponsesAPI閿涘绱?//   - APIKey 鐠愶箑褰?+ 瀵搫鍩楅幋鏍ㄥ赴濞村鈥樼拋銈勭瑝閺€顖涘瘮 Responses 閳?鐠?forwardAsRawChatCompletions
-//     閻╃娴嗘稉濠冪埗 /v1/chat/completions閿涘奔绗夐崑姘礂鐠侇喛娴嗛幑?//   - 閸忔湹绮幍鈧張澶嬪剰閸愮绱橭Auth閵嗕竸PIKey 瀵搫鍩?閹恒垺绁寸涵顔款吇閺€顖涘瘮閵嗕焦婀幒銏＄ゴ閿涘鍟?鐠ф澘甯張?CC閳壊esponses
-//     鏉烆剚宕茬捄顖氱窞閿涘牅绻氶悾娆愭＋鐞涘奔璐熼敍灞界摠闁插繑婀幒銏＄ゴ鐠愶箑褰块梿璺哄悑鐎瑰湱鐗崸蹇ョ礆
+// API key accounts whose upstream should not use Responses go straight to
+// /v1/chat/completions. OAuth accounts and API key accounts that support
+// Responses keep the conversion path.
 func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	ctx context.Context,
 	c *gin.Context,
@@ -71,7 +68,6 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	}
 	originalModel := chatReq.Model
 	clientStream := chatReq.Stream
-	includeUsage := chatReq.StreamOptions != nil && chatReq.StreamOptions.IncludeUsage
 
 	// 2. Resolve model mapping early so compat prompt_cache_key injection can
 	// derive a stable seed from the final upstream model family.
@@ -88,7 +84,7 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	// 3. Build the upstream (Responses API) body.
 	//
 	// Cursor compatibility: some clients (notably Cursor cloud) send Responses
-	// API shaped bodies 閳?`input: [...]` with no `messages` field 閳?to the
+	// API shaped bodies (`input: [...]` with no `messages` field) to the
 	// /v1/chat/completions URL. Running those through ChatCompletionsToResponses
 	// would silently drop Cursor's `input` array (the struct has no Input field)
 	// and produce `input: null`, which Codex upstreams reject with
@@ -112,7 +108,7 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 		// Strip Responses API parameters that no Codex upstream accepts.
 		// Because this branch forwards the raw body (the normal path rebuilds
 		// it from ChatCompletionsRequest and drops unknown fields naturally),
-		// we must filter these fields explicitly here 閳?otherwise the upstream
+		// we must filter these fields explicitly here, otherwise the upstream
 		// rejects the request with "Unsupported parameter: ...".
 		for _, field := range cursorResponsesUnsupportedFields {
 			if stripped, derr := sjson.DeleteBytes(responsesBody, field); derr == nil {
@@ -133,7 +129,7 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 			responsesReq.Reasoning = &apicompat.ResponsesReasoning{Effort: effort}
 		}
 	} else {
-		// Normal path: convert Chat Completions 閳?Responses.
+		// Normal path: convert Chat Completions to Responses.
 		// ChatCompletionsToResponses always sets Stream=true (upstream always streams).
 		responsesReq, err = apicompat.ChatCompletionsToResponses(&chatReq)
 		if err != nil {
@@ -188,6 +184,7 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	if policyErr != nil {
 		var blocked *OpenAIFastBlockedError
 		if errors.As(policyErr, &blocked) {
+			MarkOpsClientBusinessLimited(c, OpsClientBusinessLimitedReasonLocalPolicyDenied)
 			writeChatCompletionsError(c, http.StatusForbidden, "permission_error", blocked.Message)
 		}
 		return nil, policyErr
@@ -271,21 +268,21 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 				Message:            upstreamMsg,
 				Detail:             upstreamDetail,
 			})
-			s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, respBody)
+			s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, respBody, upstreamModel)
 			return nil, &UpstreamFailoverError{
 				StatusCode:             resp.StatusCode,
 				ResponseBody:           respBody,
-				RetryableOnSameAccount: account.IsPoolMode() && (isPoolModeRetryableStatus(resp.StatusCode) || isOpenAITransientProcessingError(resp.StatusCode, upstreamMsg, respBody)),
+				RetryableOnSameAccount: account.IsPoolMode() && (account.IsPoolModeRetryableStatus(resp.StatusCode) || isOpenAITransientProcessingError(resp.StatusCode, upstreamMsg, respBody)),
 			}
 		}
-		return s.handleChatCompletionsErrorResponse(resp, c, account)
+		return s.handleChatCompletionsErrorResponse(resp, c, account, billingModel)
 	}
 
 	// 9. Handle normal response
 	var result *OpenAIForwardResult
 	var handleErr error
 	if clientStream {
-		result, handleErr = s.handleChatStreamingResponse(resp, c, account, originalModel, billingModel, upstreamModel, includeUsage, startTime, len(body))
+		result, handleErr = s.handleChatStreamingResponse(resp, c, account, originalModel, billingModel, upstreamModel, startTime, len(body))
 	} else {
 		result, handleErr = s.handleChatBufferedStreamingResponse(resp, c, originalModel, billingModel, upstreamModel, startTime)
 	}
@@ -353,8 +350,9 @@ func (s *OpenAIGatewayService) handleChatCompletionsErrorResponse(
 	resp *http.Response,
 	c *gin.Context,
 	account *Account,
+	requestedModel ...string,
 ) (*OpenAIForwardResult, error) {
-	return s.handleCompatErrorResponse(resp, c, account, writeChatCompletionsError)
+	return s.handleCompatErrorResponse(resp, c, account, writeChatCompletionsError, requestedModel...)
 }
 
 // handleChatBufferedStreamingResponse reads all Responses SSE events from the
@@ -411,7 +409,6 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 	originalModel string,
 	billingModel string,
 	upstreamModel string,
-	includeUsage bool,
 	startTime time.Time,
 	requestBodyLen int,
 ) (*OpenAIForwardResult, error) {
@@ -435,7 +432,9 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 
 	state := apicompat.NewResponsesEventToChatState()
 	state.Model = originalModel
-	state.IncludeUsage = includeUsage
+	// 网关作为计费链路的一环，不能把下游 usage 输出绑定到客户端是否显式请求。
+	// raw Chat Completions 直转路径已经强制透出 usage，这里保持同样行为，避免级联代理计费为 0。
+	state.IncludeUsage = true
 
 	var usage OpenAIUsage
 	var firstTokenMs *int
@@ -498,8 +497,13 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 
 		// Only terminal events carry usage for the compat converter.
 		isTerminalEvent := isOpenAICompatResponsesTerminalEvent(event.Type)
-		if isTerminalEvent && event.Response != nil && event.Response.Usage != nil {
-			usage = copyOpenAIUsageFromResponsesUsage(event.Response.Usage)
+		if isTerminalEvent {
+			if event.Usage != nil {
+				usage = copyOpenAIUsageFromResponsesUsage(event.Usage)
+			}
+			if event.Response != nil && event.Response.Usage != nil {
+				usage = copyOpenAIUsageFromResponsesUsage(event.Response.Usage)
+			}
 		}
 
 		chunks := apicompat.ResponsesEventToChatChunks(&event, state)
