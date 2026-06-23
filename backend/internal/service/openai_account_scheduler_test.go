@@ -239,6 +239,87 @@ func newOpenAIAdvancedSchedulerRateLimitService(enabled string) *RateLimitServic
 	}
 }
 
+func newOpenAISchedulerRateLimitServiceWithSettings(values map[string]string) *RateLimitService {
+	resetOpenAIAdvancedSchedulerSettingCacheForTest()
+	repo := &openAIAdvancedSchedulerSettingRepoStub{
+		values: values,
+	}
+	return &RateLimitService{
+		settingService: NewSettingService(repo, &config.Config{}),
+	}
+}
+
+func TestOpenAIFillModeSelectBestAccountUsesPriorityThenID(t *testing.T) {
+	ctx := context.Background()
+	groupID := int64(28)
+	now := time.Now()
+	older := now.Add(-2 * time.Hour)
+	newer := now.Add(-1 * time.Minute)
+
+	svc := &OpenAIGatewayService{
+		rateLimitService: newOpenAISchedulerRateLimitServiceWithSettings(map[string]string{
+			openAIFillModeGroupIDsSettingKey: `[28]`,
+		}),
+	}
+	accounts := []Account{
+		{ID: 102, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 1, LastUsedAt: &older},
+		{ID: 101, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 1, LastUsedAt: &newer},
+		{ID: 100, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 5},
+	}
+
+	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, accounts, "gpt-5.5", nil, false, "")
+
+	require.False(t, compactBlocked)
+	require.NotNil(t, selected)
+	require.Equal(t, int64(101), selected.ID)
+}
+
+func TestOpenAIFillModeDisabledKeepsLRUSelection(t *testing.T) {
+	ctx := context.Background()
+	groupID := int64(28)
+	now := time.Now()
+	older := now.Add(-2 * time.Hour)
+	newer := now.Add(-1 * time.Minute)
+
+	svc := &OpenAIGatewayService{
+		rateLimitService: newOpenAISchedulerRateLimitServiceWithSettings(map[string]string{
+			openAIFillModeGroupIDsSettingKey: `[]`,
+		}),
+	}
+	accounts := []Account{
+		{ID: 102, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 1, LastUsedAt: &older},
+		{ID: 101, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 1, LastUsedAt: &newer},
+	}
+
+	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, accounts, "gpt-5.5", nil, false, "")
+
+	require.False(t, compactBlocked)
+	require.NotNil(t, selected)
+	require.Equal(t, int64(102), selected.ID)
+}
+
+func TestOpenAIFillModeSkipsRateLimitedFirstAccount(t *testing.T) {
+	ctx := context.Background()
+	groupID := int64(28)
+	resetAt := time.Now().Add(time.Hour)
+
+	svc := &OpenAIGatewayService{
+		rateLimitService: newOpenAISchedulerRateLimitServiceWithSettings(map[string]string{
+			openAIFillModeGroupIDsSettingKey: `[28]`,
+		}),
+	}
+	accounts := []Account{
+		{ID: 101, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 1, RateLimitResetAt: &resetAt},
+		{ID: 102, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 1},
+	}
+
+	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, accounts, "gpt-5.5", nil, false, "")
+
+	require.False(t, compactBlocked)
+	require.NotNil(t, selected)
+	require.Equal(t, int64(102), selected.ID)
+}
+
 func (s *openAISnapshotCacheStub) GetSnapshot(ctx context.Context, bucket SchedulerBucket) ([]*Account, bool, error) {
 	if len(s.snapshotAccounts) == 0 {
 		return nil, false, nil

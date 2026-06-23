@@ -1611,6 +1611,48 @@ func prioritizeOpenAICompactAccounts(accounts []*Account) []*Account {
 	return out
 }
 
+func sortOpenAIFillModeAccounts(accounts []*Account, requireCompact bool) []*Account {
+	if len(accounts) == 0 {
+		return nil
+	}
+	ordered := append([]*Account(nil), accounts...)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		a, b := ordered[i], ordered[j]
+		if requireCompact {
+			aTier, bTier := openAICompactSupportTier(a), openAICompactSupportTier(b)
+			if aTier != bTier {
+				return aTier > bTier
+			}
+		}
+		if a.Priority != b.Priority {
+			return a.Priority < b.Priority
+		}
+		return a.ID < b.ID
+	})
+	return ordered
+}
+
+func sortOpenAIFillModeCandidateScores(candidates []openAIAccountCandidateScore, requireCompact bool) []openAIAccountCandidateScore {
+	if len(candidates) == 0 {
+		return nil
+	}
+	ordered := append([]openAIAccountCandidateScore(nil), candidates...)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		a, b := ordered[i], ordered[j]
+		if requireCompact {
+			aTier, bTier := openAICompactSupportTier(a.account), openAICompactSupportTier(b.account)
+			if aTier != bTier {
+				return aTier > bTier
+			}
+		}
+		if a.account.Priority != b.account.Priority {
+			return a.account.Priority < b.account.Priority
+		}
+		return a.account.ID < b.account.ID
+	})
+	return ordered
+}
+
 // resolveOpenAIAccountUpstreamModelForRequest resolves the upstream model that
 // would be sent for a given request, honouring compact-only mappings when the
 // caller is on the /responses/compact path.
@@ -1741,6 +1783,8 @@ func (s *OpenAIGatewayService) selectBestAccount(ctx context.Context, groupID *i
 	selectedCompactTier := -1
 	compactBlocked := false
 	needsUpstreamCheck := s.needsUpstreamChannelRestrictionCheck(ctx, groupID)
+	fillModeEnabled := s.isOpenAIFillModeGroupEnabled(ctx, groupID)
+	fillModeCandidates := make([]*Account, 0, len(accounts))
 
 	for i := range accounts {
 		acc := &accounts[i]
@@ -1770,6 +1814,10 @@ func (s *OpenAIGatewayService) selectBestAccount(ctx context.Context, groupID *i
 				continue
 			}
 		}
+		if fillModeEnabled {
+			fillModeCandidates = append(fillModeCandidates, fresh)
+			continue
+		}
 
 		// 选择优先级最高且最久未使用的账号
 		// Select highest priority and least recently used
@@ -1791,6 +1839,13 @@ func (s *OpenAIGatewayService) selectBestAccount(ctx context.Context, groupID *i
 		if s.isBetterAccount(fresh, selected) {
 			selected = fresh
 			selectedCompactTier = compactTier
+		}
+	}
+
+	if fillModeEnabled {
+		ordered := sortOpenAIFillModeAccounts(fillModeCandidates, requireCompact)
+		if len(ordered) > 0 {
+			return ordered[0], compactBlocked
 		}
 	}
 
@@ -1845,6 +1900,7 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 
 	cfg := s.schedulingConfig()
 	needsUpstreamCheck := s.needsUpstreamChannelRestrictionCheck(ctx, groupID)
+	fillModeEnabled := s.isOpenAIFillModeGroupEnabled(ctx, groupID)
 	var stickyAccountID int64
 	if sessionHash != "" && s.cache != nil {
 		if accountID, err := s.getStickySessionAccountID(ctx, groupID, sessionHash); err == nil {
@@ -1996,26 +2052,36 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 			return nil, false, nil
 		}
 
-		sort.SliceStable(available, func(i, j int) bool {
-			a, b := available[i], available[j]
-			if a.account.Priority != b.account.Priority {
-				return a.account.Priority < b.account.Priority
-			}
-			if a.loadInfo.LoadRate != b.loadInfo.LoadRate {
-				return a.loadInfo.LoadRate < b.loadInfo.LoadRate
-			}
-			switch {
-			case a.account.LastUsedAt == nil && b.account.LastUsedAt != nil:
-				return true
-			case a.account.LastUsedAt != nil && b.account.LastUsedAt == nil:
-				return false
-			case a.account.LastUsedAt == nil && b.account.LastUsedAt == nil:
-				return false
-			default:
-				return a.account.LastUsedAt.Before(*b.account.LastUsedAt)
-			}
-		})
-		shuffleWithinSortGroups(available)
+		if fillModeEnabled {
+			sort.SliceStable(available, func(i, j int) bool {
+				a, b := available[i], available[j]
+				if a.account.Priority != b.account.Priority {
+					return a.account.Priority < b.account.Priority
+				}
+				return a.account.ID < b.account.ID
+			})
+		} else {
+			sort.SliceStable(available, func(i, j int) bool {
+				a, b := available[i], available[j]
+				if a.account.Priority != b.account.Priority {
+					return a.account.Priority < b.account.Priority
+				}
+				if a.loadInfo.LoadRate != b.loadInfo.LoadRate {
+					return a.loadInfo.LoadRate < b.loadInfo.LoadRate
+				}
+				switch {
+				case a.account.LastUsedAt == nil && b.account.LastUsedAt != nil:
+					return true
+				case a.account.LastUsedAt != nil && b.account.LastUsedAt == nil:
+					return false
+				case a.account.LastUsedAt == nil && b.account.LastUsedAt == nil:
+					return false
+				default:
+					return a.account.LastUsedAt.Before(*b.account.LastUsedAt)
+				}
+			})
+			shuffleWithinSortGroups(available)
+		}
 
 		selectionOrder := make([]accountWithLoad, 0, len(available))
 		if requireCompact {
@@ -2066,9 +2132,13 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 	loadMap, err := s.concurrencyService.GetAccountsLoadBatch(ctx, accountLoads)
 	if err != nil {
 		ordered := append([]*Account(nil), candidates...)
-		sortAccountsByPriorityAndLastUsed(ordered, false)
-		if requireCompact {
-			ordered = prioritizeOpenAICompactAccounts(ordered)
+		if fillModeEnabled {
+			ordered = sortOpenAIFillModeAccounts(ordered, requireCompact)
+		} else {
+			sortAccountsByPriorityAndLastUsed(ordered, false)
+			if requireCompact {
+				ordered = prioritizeOpenAICompactAccounts(ordered)
+			}
 		}
 		for _, acc := range ordered {
 			fresh := s.resolveFreshSchedulableOpenAIAccount(ctx, acc, requestedModel, false, requiredCapability)
@@ -2111,8 +2181,12 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 	}
 
 	// ============ Layer 3: Fallback wait ============
-	sortAccountsByPriorityAndLastUsed(candidates, false)
-	if requireCompact {
+	if fillModeEnabled {
+		candidates = sortOpenAIFillModeAccounts(candidates, requireCompact)
+	} else {
+		sortAccountsByPriorityAndLastUsed(candidates, false)
+	}
+	if requireCompact && !fillModeEnabled {
 		candidates = prioritizeOpenAICompactAccounts(candidates)
 	}
 	for _, acc := range candidates {

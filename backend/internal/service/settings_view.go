@@ -213,6 +213,7 @@ type SystemSettings struct {
 
 	// OpenAI 账号调度
 	OpenAIAdvancedSchedulerEnabled bool
+	OpenAIFillModeGroupIDs         []int64
 
 	// 余额不足提醒
 	BalanceLowNotifyEnabled     bool

@@ -159,6 +159,35 @@
           </AccountTableActions>
         </div>
         <div
+          v-if="selectedGroupForFillMode"
+          class="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+        >
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 font-medium text-gray-900 dark:text-gray-100">
+              <span>{{ t('admin.accounts.fillMode') }}</span>
+              <span class="rounded bg-primary-50 px-1.5 py-0.5 text-xs text-primary-700 dark:bg-primary-900/30 dark:text-primary-200">
+                {{ selectedGroupForFillMode.name }}
+              </span>
+            </div>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ fillModeUnavailableReason || t('admin.accounts.fillModeHint') }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-offset-gray-900"
+            :class="fillModeEnabledForSelectedGroup ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'"
+            :disabled="savingFillMode || !!fillModeUnavailableReason"
+            :title="fillModeEnabledForSelectedGroup ? t('admin.accounts.fillModeEnabled') : t('admin.accounts.fillModeDisabled')"
+            @click="toggleFillModeForSelectedGroup"
+          >
+            <span
+              class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+              :class="fillModeEnabledForSelectedGroup ? 'translate-x-5' : 'translate-x-0'"
+            />
+          </button>
+        </div>
+        <div
           v-if="hasPendingListSync"
           class="mt-2 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-200"
         >
@@ -513,6 +542,8 @@ const scheduleModelOptions = ref<SelectOption[]>([])
 const togglingSchedulable = ref<number | null>(null)
 const menu = reactive<{show:boolean, acc:Account|null, pos:{top:number, left:number}|null}>({ show: false, acc: null, pos: null })
 const exportingData = ref(false)
+const openAIFillModeGroupIds = ref<number[]>([])
+const savingFillMode = ref(false)
 
 // Account tools dropdown
 const showAccountToolsDropdown = ref(false)
@@ -778,6 +809,69 @@ const {
   rows: accounts,
   getId: (account) => account.id
 })
+
+const selectedGroupForFillMode = computed(() => {
+  const groupID = Number(params.group)
+  if (!Number.isFinite(groupID) || groupID <= 0) {
+    return null
+  }
+  return groups.value.find(item => item.id === groupID) || null
+})
+
+const fillModeUnavailableReason = computed(() => {
+  const group = selectedGroupForFillMode.value
+  if (!group) {
+    return ''
+  }
+  if (params.platform && params.platform !== 'openai') {
+    return t('admin.accounts.fillModeOpenAIOnly')
+  }
+  if (group.platform && group.platform !== 'openai') {
+    return t('admin.accounts.fillModeOpenAIOnly')
+  }
+  return ''
+})
+
+const fillModeEnabledForSelectedGroup = computed(() => {
+  const group = selectedGroupForFillMode.value
+  return !!group && openAIFillModeGroupIds.value.includes(group.id)
+})
+
+const normalizeFillModeGroupIds = (ids: number[] | undefined | null) => {
+  if (!Array.isArray(ids)) {
+    return []
+  }
+  return [...new Set(ids.filter(id => Number.isFinite(id) && id > 0))].sort((a, b) => a - b)
+}
+
+const loadOpenAIFillModeSettings = async () => {
+  const settings = await adminAPI.settings.getSettings()
+  openAIFillModeGroupIds.value = normalizeFillModeGroupIds(settings.openai_fill_mode_group_ids)
+}
+
+const toggleFillModeForSelectedGroup = async () => {
+  const group = selectedGroupForFillMode.value
+  if (!group || savingFillMode.value || fillModeUnavailableReason.value) {
+    return
+  }
+  savingFillMode.value = true
+  try {
+    const current = new Set(openAIFillModeGroupIds.value)
+    if (current.has(group.id)) {
+      current.delete(group.id)
+    } else {
+      current.add(group.id)
+    }
+    const next = [...current].sort((a, b) => a - b)
+    const updated = await adminAPI.settings.updateSettings({ openai_fill_mode_group_ids: next })
+    openAIFillModeGroupIds.value = normalizeFillModeGroupIds(updated.openai_fill_mode_group_ids ?? next)
+    appStore.showSuccess(fillModeEnabledForSelectedGroup.value ? t('admin.accounts.fillModeEnabled') : t('admin.accounts.fillModeDisabled'))
+  } catch (error: any) {
+    appStore.showError(error?.response?.data?.message || t('admin.accounts.fillModeSaveFailed'))
+  } finally {
+    savingFillMode.value = false
+  }
+}
 
 const swipeVirtualContext: SwipeSelectVirtualContext = {
   getVirtualizer: () => dataTableRef.value?.virtualizer ?? null,
@@ -1699,6 +1793,9 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load proxies/groups:', error)
   }
+  loadOpenAIFillModeSettings().catch((error) => {
+    console.error('Failed to load OpenAI fill mode settings:', error)
+  })
   window.addEventListener('scroll', handleScroll, true)
   document.addEventListener('click', handleClickOutside)
 

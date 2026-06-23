@@ -22,6 +22,7 @@ const (
 	openAIAccountScheduleLayerSessionSticky    = "session_hash"
 	openAIAccountScheduleLayerLoadBalance      = "load_balance"
 	openAIAdvancedSchedulerSettingKey          = "openai_advanced_scheduler_enabled"
+	openAIFillModeGroupIDsSettingKey           = "openai_fill_mode_group_ids"
 )
 
 const (
@@ -34,8 +35,15 @@ type cachedOpenAIAdvancedSchedulerSetting struct {
 	expiresAt int64
 }
 
+type cachedOpenAIFillModeGroups struct {
+	groupIDs  map[int64]struct{}
+	expiresAt int64
+}
+
 var openAIAdvancedSchedulerSettingCache atomic.Value // *cachedOpenAIAdvancedSchedulerSetting
 var openAIAdvancedSchedulerSettingSF singleflight.Group
+var openAIFillModeGroupCache atomic.Value // *cachedOpenAIFillModeGroups
+var openAIFillModeGroupSF singleflight.Group
 
 type OpenAIAccountScheduleRequest struct {
 	GroupID                 *int64
@@ -824,6 +832,10 @@ func (s *defaultOpenAIAccountScheduler) buildOpenAISelectionOrder(
 	req OpenAIAccountScheduleRequest,
 	plan openAIAccountLoadPlan,
 ) []openAIAccountCandidateScore {
+	if s.service != nil && s.service.isOpenAIFillModeGroupEnabled(context.Background(), req.GroupID) {
+		return sortOpenAIFillModeCandidateScores(plan.allCandidates, req.RequireCompact)
+	}
+
 	buildSelectionOrder := func(pool []openAIAccountCandidateScore) []openAIAccountCandidateScore {
 		if len(pool) == 0 || plan.topK <= 0 {
 			return nil
@@ -1184,6 +1196,50 @@ func (s *OpenAIGatewayService) isOpenAIAdvancedSchedulerEnabled(ctx context.Cont
 	return enabled
 }
 
+func (s *OpenAIGatewayService) isOpenAIFillModeGroupEnabled(ctx context.Context, groupID *int64) bool {
+	if groupID == nil || *groupID <= 0 {
+		return false
+	}
+	if cached, ok := openAIFillModeGroupCache.Load().(*cachedOpenAIFillModeGroups); ok && cached != nil {
+		if time.Now().UnixNano() < cached.expiresAt {
+			_, enabled := cached.groupIDs[*groupID]
+			return enabled
+		}
+	}
+
+	result, _, _ := openAIFillModeGroupSF.Do(openAIFillModeGroupIDsSettingKey, func() (any, error) {
+		if cached, ok := openAIFillModeGroupCache.Load().(*cachedOpenAIFillModeGroups); ok && cached != nil {
+			if time.Now().UnixNano() < cached.expiresAt {
+				_, enabled := cached.groupIDs[*groupID]
+				return enabled, nil
+			}
+		}
+
+		groupIDs := map[int64]struct{}{}
+		if repo := s.openAIAdvancedSchedulerSettingRepo(); repo != nil {
+			dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), openAIAdvancedSchedulerSettingDBTimeout)
+			defer cancel()
+
+			value, err := repo.GetValue(dbCtx, openAIFillModeGroupIDsSettingKey)
+			if err == nil {
+				for _, id := range parseOpenAIFillModeGroupIDs(value) {
+					groupIDs[id] = struct{}{}
+				}
+			}
+		}
+
+		openAIFillModeGroupCache.Store(&cachedOpenAIFillModeGroups{
+			groupIDs:  groupIDs,
+			expiresAt: time.Now().Add(openAIAdvancedSchedulerSettingCacheTTL).UnixNano(),
+		})
+		_, enabled := groupIDs[*groupID]
+		return enabled, nil
+	})
+
+	enabled, _ := result.(bool)
+	return enabled
+}
+
 func (s *OpenAIGatewayService) getOpenAIAccountScheduler(ctx context.Context) OpenAIAccountScheduler {
 	if s == nil {
 		return nil
@@ -1205,6 +1261,12 @@ func (s *OpenAIGatewayService) getOpenAIAccountScheduler(ctx context.Context) Op
 func resetOpenAIAdvancedSchedulerSettingCacheForTest() {
 	openAIAdvancedSchedulerSettingCache = atomic.Value{}
 	openAIAdvancedSchedulerSettingSF = singleflight.Group{}
+	resetOpenAIFillModeGroupCacheForTest()
+}
+
+func resetOpenAIFillModeGroupCacheForTest() {
+	openAIFillModeGroupCache = atomic.Value{}
+	openAIFillModeGroupSF = singleflight.Group{}
 }
 
 func (s *OpenAIGatewayService) SelectAccountWithScheduler(

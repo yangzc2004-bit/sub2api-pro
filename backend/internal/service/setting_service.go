@@ -2005,6 +2005,11 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingPaymentVisibleMethodAlipayEnabled] = strconv.FormatBool(settings.PaymentVisibleMethodAlipayEnabled)
 	updates[SettingPaymentVisibleMethodWxpayEnabled] = strconv.FormatBool(settings.PaymentVisibleMethodWxpayEnabled)
 	updates[openAIAdvancedSchedulerSettingKey] = strconv.FormatBool(settings.OpenAIAdvancedSchedulerEnabled)
+	fillModeGroupIDsJSON, err := marshalOpenAIFillModeGroupIDs(settings.OpenAIFillModeGroupIDs)
+	if err != nil {
+		return nil, fmt.Errorf("marshal openai fill mode group ids: %w", err)
+	}
+	updates[openAIFillModeGroupIDsSettingKey] = fillModeGroupIDsJSON
 
 	// 余额、订阅到期与账号限额通知
 	updates[SettingKeyBalanceLowNotifyEnabled] = strconv.FormatBool(settings.BalanceLowNotifyEnabled)
@@ -2152,6 +2157,11 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 	openAIAdvancedSchedulerSettingSF.Forget(openAIAdvancedSchedulerSettingKey)
 	openAIAdvancedSchedulerSettingCache.Store(&cachedOpenAIAdvancedSchedulerSetting{
 		enabled:   settings.OpenAIAdvancedSchedulerEnabled,
+		expiresAt: time.Now().Add(openAIAdvancedSchedulerSettingCacheTTL).UnixNano(),
+	})
+	openAIFillModeGroupSF.Forget(openAIFillModeGroupIDsSettingKey)
+	openAIFillModeGroupCache.Store(&cachedOpenAIFillModeGroups{
+		groupIDs:  openAIFillModeGroupIDMap(settings.OpenAIFillModeGroupIDs),
 		expiresAt: time.Now().Add(openAIAdvancedSchedulerSettingCacheTTL).UnixNano(),
 	})
 	// Invalidate the quota auto-pause cache and let the next read trigger a fresh load.
@@ -2958,6 +2968,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingPaymentVisibleMethodAlipayEnabled:     "false",
 		SettingPaymentVisibleMethodWxpayEnabled:      "false",
 		openAIAdvancedSchedulerSettingKey:            "false",
+		openAIFillModeGroupIDsSettingKey:             "[]",
 
 		SettingKeyAllowUserViewErrorRequests: "false",
 	}
@@ -3505,6 +3516,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.PaymentVisibleMethodAlipayEnabled = settings[SettingPaymentVisibleMethodAlipayEnabled] == "true"
 	result.PaymentVisibleMethodWxpayEnabled = settings[SettingPaymentVisibleMethodWxpayEnabled] == "true"
 	result.OpenAIAdvancedSchedulerEnabled = settings[openAIAdvancedSchedulerSettingKey] == "true"
+	result.OpenAIFillModeGroupIDs = parseOpenAIFillModeGroupIDs(settings[openAIFillModeGroupIDsSettingKey])
 
 	// 余额、订阅到期与账号限额通知
 	result.BalanceLowNotifyEnabled = settings[SettingKeyBalanceLowNotifyEnabled] == "true"
@@ -3600,6 +3612,69 @@ func parseDefaultSubscriptions(raw string) []DefaultSubscriptionSetting {
 	}
 
 	return normalized
+}
+
+func normalizeOpenAIFillModeGroupIDs(ids []int64) []int64 {
+	if len(ids) == 0 {
+		return []int64{}
+	}
+	seen := make(map[int64]struct{}, len(ids))
+	normalized := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		normalized = append(normalized, id)
+	}
+	sort.Slice(normalized, func(i, j int) bool {
+		return normalized[i] < normalized[j]
+	})
+	return normalized
+}
+
+func openAIFillModeGroupIDMap(ids []int64) map[int64]struct{} {
+	normalized := normalizeOpenAIFillModeGroupIDs(ids)
+	out := make(map[int64]struct{}, len(normalized))
+	for _, id := range normalized {
+		out[id] = struct{}{}
+	}
+	return out
+}
+
+func parseOpenAIFillModeGroupIDs(raw string) []int64 {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return []int64{}
+	}
+	var ids []int64
+	if err := json.Unmarshal([]byte(raw), &ids); err == nil {
+		return normalizeOpenAIFillModeGroupIDs(ids)
+	}
+	var values []float64
+	if err := json.Unmarshal([]byte(raw), &values); err != nil {
+		return []int64{}
+	}
+	ids = make([]int64, 0, len(values))
+	for _, value := range values {
+		id := int64(value)
+		if value == float64(id) {
+			ids = append(ids, id)
+		}
+	}
+	return normalizeOpenAIFillModeGroupIDs(ids)
+}
+
+func marshalOpenAIFillModeGroupIDs(ids []int64) (string, error) {
+	normalized := normalizeOpenAIFillModeGroupIDs(ids)
+	data, err := json.Marshal(normalized)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func parseProviderDefaultGrantSettings(settings map[string]string, keys authSourceDefaultKeySet) ProviderDefaultGrantSettings {
