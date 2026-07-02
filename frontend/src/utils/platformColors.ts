@@ -17,7 +17,7 @@ const BADGE: Record<Platform, string> = {
   mimo: 'bg-teal-500/10 text-teal-600 border-teal-500/30 dark:text-teal-400',
   qwen: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400',
   deepseek: 'bg-sky-500/10 text-sky-600 border-sky-500/30 dark:text-sky-400',
-  grok: 'bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-300',
+  grok: 'bg-zinc-800/10 text-zinc-800 border-zinc-800/30 dark:bg-zinc-500/10 dark:text-zinc-200 dark:border-zinc-500/30',
 }
 const BADGE_DEFAULT = 'bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-400'
 
@@ -31,7 +31,7 @@ const BADGE_LIGHT: Record<Platform, string> = {
   mimo: 'bg-teal-500/10 text-teal-600 dark:bg-teal-500/10 dark:text-teal-300',
   qwen: 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300',
   deepseek: 'bg-sky-500/10 text-sky-600 dark:bg-sky-500/10 dark:text-sky-300',
-  grok: 'bg-slate-500/10 text-slate-600 dark:bg-slate-500/10 dark:text-slate-300',
+  grok: 'bg-zinc-800/10 text-zinc-800 dark:bg-zinc-500/10 dark:text-zinc-200',
 }
 
 // ── Border ──────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ const BORDER: Record<Platform, string> = {
   mimo: 'border-teal-500/20 dark:border-teal-500/20',
   qwen: 'border-amber-500/20 dark:border-amber-500/20',
   deepseek: 'border-sky-500/20 dark:border-sky-500/20',
-  grok: 'border-slate-500/20 dark:border-slate-500/20',
+  grok: 'border-zinc-800/20 dark:border-zinc-500/20',
 }
 const BORDER_DEFAULT = 'border-gray-200 dark:border-dark-700'
 
@@ -58,7 +58,7 @@ const ACCENT_BAR: Record<Platform, string> = {
   mimo: 'bg-gradient-to-r from-teal-400 to-teal-500',
   qwen: 'bg-gradient-to-r from-amber-400 to-amber-500',
   deepseek: 'bg-gradient-to-r from-sky-400 to-sky-500',
-  grok: 'bg-gradient-to-r from-slate-500 to-cyan-500',
+  grok: 'bg-gradient-to-r from-zinc-700 to-zinc-900',
 }
 const ACCENT_BAR_DEFAULT = 'bg-gradient-to-r from-primary-400 to-primary-500'
 
@@ -72,7 +72,7 @@ const TEXT: Record<Platform, string> = {
   mimo: 'text-teal-600 dark:text-teal-400',
   qwen: 'text-amber-600 dark:text-amber-400',
   deepseek: 'text-sky-600 dark:text-sky-400',
-  grok: 'text-slate-700 dark:text-slate-300',
+  grok: 'text-zinc-800 dark:text-zinc-200',
 }
 const TEXT_DEFAULT = 'text-primary-600 dark:text-primary-400'
 
@@ -86,7 +86,7 @@ const ICON: Record<Platform, string> = {
   mimo: 'text-teal-500 dark:text-teal-400',
   qwen: 'text-amber-500 dark:text-amber-400',
   deepseek: 'text-sky-500 dark:text-sky-400',
-  grok: 'text-slate-500 dark:text-slate-300',
+  grok: 'text-zinc-800 dark:text-zinc-200',
 }
 const ICON_DEFAULT = 'text-primary-500 dark:text-primary-400'
 
@@ -100,7 +100,7 @@ const BUTTON: Record<Platform, string> = {
   mimo: 'bg-teal-500 text-white hover:bg-teal-600 active:bg-teal-700 dark:bg-teal-500/80 dark:hover:bg-teal-500',
   qwen: 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 dark:bg-amber-500/80 dark:hover:bg-amber-500',
   deepseek: 'bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700 dark:bg-sky-500/80 dark:hover:bg-sky-500',
-  grok: 'bg-slate-700 text-white hover:bg-slate-800 active:bg-slate-900 dark:bg-slate-600 dark:hover:bg-slate-500',
+  grok: 'bg-zinc-800 text-white hover:bg-zinc-900 active:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600',
 }
 const BUTTON_DEFAULT = 'bg-primary-500 text-white hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500'
 
@@ -114,7 +114,7 @@ const DISCOUNT: Record<Platform, string> = {
   mimo: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
   qwen: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   deepseek: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
-  grok: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  grok: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200',
 }
 const DISCOUNT_DEFAULT = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
 
@@ -128,7 +128,7 @@ const GRADIENT: Record<Platform, string> = {
   mimo: 'from-teal-500 to-teal-600',
   qwen: 'from-amber-500 to-amber-600',
   deepseek: 'from-sky-500 to-sky-600',
-  grok: 'from-slate-600 to-cyan-600',
+  grok: 'from-zinc-700 to-zinc-900',
 }
 const GRADIENT_DEFAULT = 'from-primary-500 to-primary-600'
 
@@ -142,7 +142,7 @@ const GRADIENT_TEXT: Record<Platform, string> = {
   mimo: 'text-teal-100',
   qwen: 'text-amber-100',
   deepseek: 'text-sky-100',
-  grok: 'text-slate-100',
+  grok: 'text-zinc-100',
 }
 const GRADIENT_TEXT_DEFAULT = 'text-primary-100'
 
@@ -155,7 +155,7 @@ const GRADIENT_SUBTEXT: Record<Platform, string> = {
   mimo: 'text-teal-200',
   qwen: 'text-amber-200',
   deepseek: 'text-sky-200',
-  grok: 'text-slate-200',
+  grok: 'text-zinc-300',
 }
 const GRADIENT_SUBTEXT_DEFAULT = 'text-primary-200'
 
