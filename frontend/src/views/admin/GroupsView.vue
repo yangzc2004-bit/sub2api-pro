@@ -3150,6 +3150,7 @@ const platformOptions = computed(() => [
   { value: "kimi", label: "Kimi" },
   { value: "mimo", label: "MiMo" },
   { value: "qwen", label: "Qwen" },
+  { value: "grok", label: "Grok" },
 ]);
 
 const platformFilterOptions = computed(() => [
@@ -3162,6 +3163,7 @@ const platformFilterOptions = computed(() => [
   { value: "kimi", label: "Kimi" },
   { value: "mimo", label: "MiMo" },
   { value: "qwen", label: "Qwen" },
+  { value: "grok", label: "Grok" },
 ]);
 
 const editStatusOptions = computed(() => [

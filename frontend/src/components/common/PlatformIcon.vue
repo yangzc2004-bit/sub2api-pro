@@ -35,6 +35,12 @@
   <svg v-else-if="platform === 'deepseek'" :class="sizeClass" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2.25 20 6.86v10.28L12 21.75 4 17.14V6.86L12 2.25zm0 3.08-5.33 3.07v6.24L12 17.71l5.33-3.07V8.4L12 5.33zm0 2.92a3.5 3.5 0 110 7 3.5 3.5 0 010-7z" />
   </svg>
+  <!-- Grok/xAI logo mark -->
+  <svg v-else-if="platform === 'grok'" :class="sizeClass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M4 18 18 4" />
+    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5h11v11" />
+    <path stroke-linecap="round" stroke-linejoin="round" d="M5 6l13 13" />
+  </svg>
   <!-- Fallback: generic platform icon -->
   <svg v-else :class="sizeClass" fill="currentColor" viewBox="0 0 24 24">
     <path

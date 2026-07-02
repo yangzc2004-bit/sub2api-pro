@@ -267,7 +267,7 @@ func TestOpenAIFillModeSelectBestAccountUsesPriorityThenID(t *testing.T) {
 		{ID: 100, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 5},
 	}
 
-	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, accounts, "gpt-5.5", nil, false, "")
+	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, PlatformOpenAI, accounts, "gpt-5.5", nil, false, OpenAIEndpointCapabilityChatCompletions)
 
 	require.False(t, compactBlocked)
 	require.NotNil(t, selected)
@@ -291,7 +291,7 @@ func TestOpenAIFillModeDisabledKeepsLRUSelection(t *testing.T) {
 		{ID: 101, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 1, LastUsedAt: &newer},
 	}
 
-	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, accounts, "gpt-5.5", nil, false, "")
+	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, PlatformOpenAI, accounts, "gpt-5.5", nil, false, OpenAIEndpointCapabilityChatCompletions)
 
 	require.False(t, compactBlocked)
 	require.NotNil(t, selected)
@@ -313,7 +313,7 @@ func TestOpenAIFillModeSkipsRateLimitedFirstAccount(t *testing.T) {
 		{ID: 102, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Priority: 1},
 	}
 
-	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, accounts, "gpt-5.5", nil, false, "")
+	selected, compactBlocked := svc.selectBestAccount(ctx, &groupID, PlatformOpenAI, accounts, "gpt-5.5", nil, false, OpenAIEndpointCapabilityChatCompletions)
 
 	require.False(t, compactBlocked)
 	require.NotNil(t, selected)
@@ -553,6 +553,50 @@ func TestOpenAIGatewayService_SelectAccountWithScheduler_DefaultDisabled_Embeddi
 	require.NotNil(t, selection)
 	require.NotNil(t, selection.Account)
 	require.Equal(t, int64(36032), selection.Account.ID)
+	require.Equal(t, openAIAccountScheduleLayerLoadBalance, decision.Layer)
+}
+
+func TestOpenAIGatewayService_SelectAccountWithScheduler_DefaultDisabled_AllowsGrokChatAccount(t *testing.T) {
+	resetOpenAIAdvancedSchedulerSettingCacheForTest()
+
+	ctx := context.Background()
+	groupID := int64(10113)
+	accounts := []Account{
+		{
+			ID:          36041,
+			Platform:    PlatformGrok,
+			Type:        AccountTypeOAuth,
+			Status:      StatusActive,
+			Schedulable: true,
+			Concurrency: 1,
+			Priority:    0,
+		},
+	}
+	cfg := &config.Config{}
+	cfg.Gateway.Scheduling.LoadBatchEnabled = false
+	svc := &OpenAIGatewayService{
+		accountRepo:        schedulerTestOpenAIAccountRepo{accounts: accounts},
+		cache:              &schedulerTestGatewayCache{},
+		cfg:                cfg,
+		concurrencyService: NewConcurrencyService(schedulerTestConcurrencyCache{}),
+	}
+
+	selection, decision, err := svc.SelectAccountWithSchedulerForCapability(
+		ctx,
+		&groupID,
+		"",
+		"",
+		"grok-4.3",
+		nil,
+		OpenAIUpstreamTransportAny,
+		OpenAIEndpointCapabilityChatCompletions,
+		false,
+		PlatformGrok,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, selection)
+	require.NotNil(t, selection.Account)
+	require.Equal(t, int64(36041), selection.Account.ID)
 	require.Equal(t, openAIAccountScheduleLayerLoadBalance, decision.Layer)
 }
 
