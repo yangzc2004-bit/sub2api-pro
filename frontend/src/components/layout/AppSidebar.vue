@@ -9,13 +9,21 @@
     <!-- Logo/Brand -->
     <div class="sidebar-header" :class="{ 'sidebar-header-collapsed': sidebarCollapsed }">
       <!-- Custom Logo or Default Logo -->
-      <div class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden">
+      <router-link
+        :to="homePath"
+        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow transition-opacity hover:opacity-80"
+        @click="handleMenuItemClick(homePath)"
+      >
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
-      </div>
+      </router-link>
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
-        <span class="sidebar-brand-title text-lg font-bold text-[var(--app-text)]">
+        <router-link
+          :to="homePath"
+          class="sidebar-brand-title text-lg font-bold text-gray-900 transition-colors hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          @click="handleMenuItemClick(homePath)"
+        >
           {{ siteName }}
-        </span>
+        </router-link>
         <!-- Version Badge -->
         <VersionBadge :version="siteVersion" />
       </div>
@@ -54,7 +62,7 @@
                 </span>
               </button>
               <!-- Children -->
-              <div v-if="!sidebarCollapsed && isGroupExpanded(item)" class="mb-1 ml-4 border-l border-[var(--app-line)] pl-2">
+              <div v-if="!sidebarCollapsed && isGroupExpanded(item)" class="mb-1 ml-4 border-l border-gray-200 pl-2 dark:border-dark-600">
                 <router-link
                   v-for="child in item.children"
                   :key="child.path"
@@ -140,11 +148,20 @@
     </nav>
 
     <!-- Bottom Section -->
-    <div class="sidebar-footer">
+    <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
       <!-- Theme Toggle -->
-      <div class="mb-2 flex justify-center">
-        <ThemeToggle />
-      </div>
+      <button
+        @click="toggleTheme"
+        class="sidebar-link mb-2 w-full"
+        :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
+        :title="sidebarCollapsed ? (isDark ? t('nav.lightMode') : t('nav.darkMode')) : undefined"
+      >
+        <SunIcon v-if="isDark" class="h-5 w-5 flex-shrink-0 text-amber-500" />
+        <MoonIcon v-else class="h-5 w-5 flex-shrink-0" />
+        <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{
+          isDark ? t('nav.lightMode') : t('nav.darkMode')
+        }}</span>
+      </button>
 
       <!-- Collapse Button -->
       <button
@@ -164,7 +181,7 @@
   <transition name="fade">
     <div
       v-if="mobileOpen"
-      class="sidebar-mobile-overlay lg:hidden"
+      class="fixed inset-0 z-30 bg-black/50 lg:hidden"
       @click="closeMobile"
     ></div>
   </transition>
@@ -176,9 +193,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import VersionBadge from '@/components/common/VersionBadge.vue'
-import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
-import { formatSiteName } from '@/utils/branding'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
 
 interface NavItem {
@@ -229,12 +244,15 @@ const adminSettingsStore = useAdminSettingsStore()
 const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
 const isAdmin = computed(() => authStore.isAdmin)
+const isDark = ref(document.documentElement.classList.contains('dark'))
+
+const homePath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
 
 // Track which parent nav groups are expanded
 const expandedGroups = ref<Set<string>>(new Set())
 
 // Site settings from appStore (cached, no flicker)
-const siteName = computed(() => formatSiteName(appStore.siteName))
+const siteName = computed(() => appStore.siteName)
 const siteLogo = computed(() => appStore.siteLogo)
 const siteVersion = computed(() => appStore.siteVersion)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
@@ -360,21 +378,6 @@ const ChannelIcon = {
     )
 }
 
-const SparklesIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z'
-        })
-      ]
-    )
-}
-
 const CreditCardIcon = {
   render: () =>
     h(
@@ -490,6 +493,36 @@ const CogIcon = {
           'stroke-linecap': 'round',
           'stroke-linejoin': 'round',
           d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+        })
+      ]
+    )
+}
+
+const SunIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z'
+        })
+      ]
+    )
+}
+
+const MoonIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z'
         })
       ]
     )
@@ -645,7 +678,6 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
     { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
-    { path: '/models', label: t('nav.modelCatalog'), icon: SparklesIcon, hideInSimpleMode: true },
     { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/purchase', label: t('nav.buySubscription'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
@@ -698,7 +730,6 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/ops', label: t('nav.ops'), icon: ChartIcon, featureFlag: flagOpsMonitoring },
     { path: '/admin/users', label: t('nav.users'), icon: UsersIcon, hideInSimpleMode: true },
     { path: '/admin/groups', label: t('nav.groups'), icon: FolderIcon, hideInSimpleMode: true },
-    { path: '/admin/models', label: t('nav.modelCatalog'), icon: SparklesIcon, hideInSimpleMode: true },
     {
       path: '/admin/channels',
       label: t('nav.channelManagement'),
@@ -770,6 +801,12 @@ function toggleSidebar() {
   appStore.toggleSidebar()
 }
 
+function toggleTheme() {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
+
 function closeMobile() {
   appStore.setMobileOpen(false)
 }
@@ -835,6 +872,16 @@ function handleGroupClick(item: NavItem) {
   if (!expandedGroups.value.has(item.path)) {
     expandedGroups.value.add(item.path)
   }
+}
+
+// Initialize theme
+const savedTheme = localStorage.getItem('theme')
+if (
+  savedTheme === 'dark' ||
+  (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+) {
+  isDark.value = true
+  document.documentElement.classList.add('dark')
 }
 
 // Fetch admin settings (for feature-gated nav items like Ops).
@@ -925,10 +972,14 @@ onMounted(() => {
   right: 0.75rem;
   top: 50%;
   height: 1px;
-  background: var(--app-line);
+  background: rgb(229 231 235);
   opacity: 0;
   transform: translateY(-50%);
   transition: opacity 0.18s ease;
+}
+
+.dark .sidebar-section-title::after {
+  background: rgb(55 65 81);
 }
 
 .sidebar-section-title-text-collapsed {
