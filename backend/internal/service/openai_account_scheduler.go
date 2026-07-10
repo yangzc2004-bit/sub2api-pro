@@ -984,6 +984,24 @@ func sortOpenAICompactRetryCandidates(pool []openAIAccountCandidateScore) []open
 	return ordered
 }
 
+func sortOpenAIFillModeCandidateScores(candidates []openAIAccountCandidateScore, requireCompact bool) []openAIAccountCandidateScore {
+	ordered := append([]openAIAccountCandidateScore(nil), candidates...)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		a, b := ordered[i], ordered[j]
+		if requireCompact {
+			aTier, bTier := openAICompactSupportTier(a.account), openAICompactSupportTier(b.account)
+			if aTier != bTier {
+				return aTier > bTier
+			}
+		}
+		if a.account.Priority != b.account.Priority {
+			return a.account.Priority < b.account.Priority
+		}
+		return a.account.ID < b.account.ID
+	})
+	return ordered
+}
+
 func (s *defaultOpenAIAccountScheduler) tryAcquireOpenAISelectionOrder(
 	ctx context.Context,
 	req OpenAIAccountScheduleRequest,
