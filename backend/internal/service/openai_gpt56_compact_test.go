@@ -114,6 +114,7 @@ func TestOpenAIGatewayForwardOAuthCompactDowngradesGPT56Max(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = httptest.NewRequest(http.MethodPost, "/responses/compact", nil)
+	c.Request.Header.Set("User-Agent", "Codex Desktop/0.144.0-alpha.4 (Windows 10.0.26200; x86_64) dumb (Codex Desktop; 26.707.31428)")
 	SetOpenAIClientTransport(c, OpenAIClientTransportHTTP)
 
 	body := []byte(`{"model":"gpt-5.6-sol","input":"hi","reasoning":{"effort":"max"}}`)
@@ -123,4 +124,5 @@ func TestOpenAIGatewayForwardOAuthCompactDowngradesGPT56Max(t *testing.T) {
 	require.NotNil(t, result)
 	require.Equal(t, chatgptCodexURL+"/compact", upstream.lastReq.URL.String())
 	require.Equal(t, "xhigh", gjson.GetBytes(upstream.lastBody, "reasoning.effort").String())
+	require.Equal(t, "0.144.1", upstream.lastReq.Header.Get("Version"))
 }
