@@ -47,10 +47,12 @@
                     ? 'https://chat.qwen.ai/api'
                   : account.platform === 'antigravity'
                     ? 'https://cloudcode-pa.googleapis.com'
-                    : 'https://api.anthropic.com'
+                    : account.platform === 'grok'
+                      ? 'https://api.x.ai/v1'
+                      : 'https://api.anthropic.com'
             "
           />
-          <p class="input-hint">{{ baseUrlHint }}</p>
+          <p v-if="baseUrlHint" class="input-hint">{{ baseUrlHint }}</p>
         </div>
         <div v-if="account.platform === 'mimo'">
           <label class="input-label">MiMo Anthropic Base URL</label>
@@ -83,7 +85,9 @@
                     ? 'tp-...'
                   : account.platform === 'antigravity'
                     ? 'sk-...'
-                    : 'sk-ant-...'
+                    : account.platform === 'grok'
+                      ? 'xai-...'
+                      : 'sk-ant-...'
             "
           />
           <p class="input-hint">{{ t('admin.accounts.leaveEmptyToKeep') }}</p>
@@ -2649,6 +2653,7 @@ const baseUrlHint = computed(() => {
   if (props.account.platform === 'deepseek') return 'DeepSeek OpenAI-compatible Base URL'
   if (props.account.platform === 'mimo') return 'MiMo OpenAI-compatible Base URL'
   if (props.account.platform === 'qwen') return 'Qwen Web API Base URL, default chat.qwen.ai'
+  if (props.account.platform === 'grok') return ''
   return t('admin.accounts.baseUrlHint')
 })
 
@@ -3103,6 +3108,7 @@ const defaultBaseUrl = computed(() => {
   if (props.account?.platform === 'gemini') return 'https://generativelanguage.googleapis.com'
   if (props.account?.platform === 'deepseek') return 'https://api.deepseek.com'
   if (props.account?.platform === 'mimo') return 'https://token-plan-cn.xiaomimimo.com/v1'
+  if (props.account?.platform === 'grok') return 'https://api.x.ai/v1'
   return 'https://api.anthropic.com'
 })
 
@@ -3398,7 +3404,9 @@ const syncFormFromAccount = (newAccount: Account | null) => {
             ? 'https://token-plan-cn.xiaomimimo.com/v1'
           : newAccount.platform === 'qwen'
             ? 'https://chat.qwen.ai/api'
-          : 'https://api.anthropic.com'
+          : newAccount.platform === 'grok'
+            ? 'https://api.x.ai/v1'
+            : 'https://api.anthropic.com'
     editBaseUrl.value =
       (newAccount.platform === 'mimo'
         ? ((credentials.mimo_openai_base_url as string) || (credentials.base_url as string))
@@ -3493,7 +3501,9 @@ const syncFormFromAccount = (newAccount: Account | null) => {
             ? 'https://token-plan-cn.xiaomimimo.com/v1'
           : newAccount.platform === 'qwen'
             ? 'https://chat.qwen.ai/api'
-          : 'https://api.anthropic.com'
+          : newAccount.platform === 'grok'
+            ? 'https://api.x.ai/v1'
+            : 'https://api.anthropic.com'
     editBaseUrl.value = platformDefaultUrl
     editMimoAnthropicBaseUrl.value = 'https://token-plan-cn.xiaomimimo.com/anthropic'
 
