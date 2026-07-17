@@ -78,6 +78,11 @@ export default defineConfig(({ mode }) => {
                 return 'vendor-i18n'
               }
 
+              // Stripe is loaded only by payment flows.
+              if (id.includes('/@stripe/stripe-js/')) {
+                return 'vendor-stripe'
+              }
+
               return 'vendor-misc'
             }
           }
