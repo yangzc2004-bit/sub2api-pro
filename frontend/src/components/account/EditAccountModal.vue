@@ -1750,7 +1750,13 @@
         />
       </div>
 
-      <!-- Anthropic API Key 閼奉亜濮╅柅蹇庣炊瀵偓閸?-->
+      <OllamaCloudUsageSettings
+        v-if="account?.ollama_cloud_usage?.eligible"
+        :account="account"
+        @updated="handleOllamaCloudUsageUpdated"
+      />
+
+      <!-- Anthropic API Key 自动透传开关 -->
       <div
         v-if="account?.platform === 'anthropic' && account?.type === 'apikey'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2713,7 +2719,8 @@ import type {
   CheckMixedChannelResponse,
   OpenAICompactMode,
   OpenAIResponsesMode,
-  OpenAIEndpointCapability
+  OpenAIEndpointCapability,
+  OllamaCloudUsageState
 } from '@/types'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -2726,6 +2733,7 @@ import Toggle from '@/components/common/Toggle.vue'
 import ModelWhitelistSelector from '@/components/account/ModelWhitelistSelector.vue'
 import QuotaLimitCard from '@/components/account/QuotaLimitCard.vue'
 import GrokBaseUrlPresets from '@/components/account/GrokBaseUrlPresets.vue'
+import OllamaCloudUsageSettings from '@/components/account/OllamaCloudUsageSettings.vue'
 import {
   applyAntigravityProjectID,
   applyHeaderOverride,
@@ -2783,6 +2791,10 @@ const authStore = useAuthStore()
 // Spark 影子账号(parent_account_id 非空):代理恒继承母账号,不可独立编辑(外审 B/P1),
 // 故隐藏代理选择器。
 const isSparkShadow = computed(() => props.account?.parent_account_id != null)
+
+const handleOllamaCloudUsageUpdated = (state: OllamaCloudUsageState) => {
+  if (props.account) emit('updated', { ...props.account, ollama_cloud_usage: state })
+}
 
 // Platform-specific hint for Base URL
 const baseUrlHint = computed(() => {

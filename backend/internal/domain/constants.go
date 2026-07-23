@@ -27,6 +27,7 @@ const (
 	PlatformQwen        = "qwen"
 	PlatformDeepSeek    = "deepseek"
 	PlatformGrok        = "grok"
+	PlatformComposite   = "composite"
 )
 
 // Account type constants
